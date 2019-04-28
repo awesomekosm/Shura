@@ -1,0 +1,12 @@
+shura.datasource:
+  url: jdbc:sqlite:shura.db
+  driver: org.sqlite.JDBC
+
+hibernate.dialect: org.hibernate.dialect.SQLiteDialect
+spring:
+  liquibase:
+    enabled: false
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update

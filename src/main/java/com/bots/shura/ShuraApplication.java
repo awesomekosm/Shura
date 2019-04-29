@@ -7,7 +7,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * 3222528 permission integer <br>
- * https://discordapp.com/oauth2/authorize?client_id=571907899513896992&permissions=3222528&scope=bot
+ * https://discordapp.com/oauth2/authorize?client_id=169479851839848449&permissions=3222528&scope=bot
  */
 @SpringBootApplication
 public class ShuraApplication {

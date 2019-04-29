@@ -59,6 +59,9 @@ class CommandProcessor {
                 if (voiceState != null) {
                     final VoiceChannel channel = voiceState.getChannel().block()
                     if (channel != null) {
+                        if(voiceConnection != null){
+                            voiceConnection.disconnect()
+                        }
                         voiceConnection = channel.join({ spec -> spec.setProvider(audioProvider) }).block()
                     }
                 }
@@ -71,7 +74,6 @@ class CommandProcessor {
         void execute(MessageCreateEvent event) {
             if (voiceConnection != null) {
                 voiceConnection.disconnect()
-                voiceConnection = null
             }
         }
     }

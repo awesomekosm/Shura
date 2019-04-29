@@ -12,7 +12,7 @@ spring:
       ddl-auto: update
 
 logging.level:
-  root: DEBUG
+  root: INFO
   org.hibernate: ERROR
 
 discord:

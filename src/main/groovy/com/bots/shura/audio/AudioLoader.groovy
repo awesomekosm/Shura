@@ -4,11 +4,15 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
 class AudioLoader implements AudioLoadResultHandler {
+
+    static Logger LOGGER = LoggerFactory.getLogger(AudioLoader)
 
     @Autowired
     TrackScheduler trackScheduler
@@ -29,11 +33,11 @@ class AudioLoader implements AudioLoadResultHandler {
 
     @Override
     public void noMatches() {
-        // LavaPlayer did not find any audio to extract
+        LOGGER.error('LavaPlayer did not find any audio to extract')
     }
 
     @Override
     public void loadFailed(final FriendlyException exception) {
-        // LavaPlayer could not parse an audio source for some reason
+        LOGGER.error('LavaPlayer could not parse an audio source for some reason', exception)
     }
 }

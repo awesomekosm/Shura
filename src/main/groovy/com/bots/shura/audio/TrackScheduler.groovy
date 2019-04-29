@@ -5,11 +5,15 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
 class TrackScheduler extends AudioEventAdapter {
+
+    static Logger LOGGER = LoggerFactory.getLogger(TrackScheduler)
 
     @Autowired
     AudioPlayer audioPlayer
@@ -19,12 +23,12 @@ class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
-        // Player was paused
+        LOGGER.info("Player was paused")
     }
 
     @Override
     public void onPlayerResume(AudioPlayer player) {
-        // Player was resumed
+        LOGGER.info("Player was resumed")
     }
 
     @Override
@@ -76,10 +80,12 @@ class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
         // An already playing track threw an exception (track end event will still be received separately)
+        LOGGER.error("Playing track threw an exception", exception)
     }
 
     @Override
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
+        LOGGER.error("Track is stuck {} {}", track.getInfo().title, track.getInfo().uri)
         // Audio track has been unable to provide us any audio, might want to just start a new track
         nextTrack(player)
     }

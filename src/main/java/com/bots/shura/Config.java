@@ -15,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBu
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import org.apache.http.client.config.RequestConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -53,7 +54,10 @@ class Config {
     AudioPlayerManager playerManager() {
         // Creates AudioPlayer instances and translates URLs to AudioTrack instances
         final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        // This is an optimization strategy that Discord4J can utilize. It is not important to understand
+        // Give 10 seconds to connect before timing out
+        playerManager.setHttpRequestConfigurator(requestConfig ->
+                RequestConfig.copy(requestConfig).setConnectTimeout(10000).build());
+        // This is an optimization strategy that Discord4J can utilize.
         playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
         // Allow playerManager to parse remote sources like YouTube links
         AudioSourceManagers.registerRemoteSources(playerManager);

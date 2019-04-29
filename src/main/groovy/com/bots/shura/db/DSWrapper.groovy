@@ -6,4 +6,8 @@ import javax.sql.DataSource
 /** Can't create DataSource beans and use AbstractRoutingDataSource because sprint triggers out of order process to create default data source**/
 class DSWrapper {
     DataSource dataSource
+
+    DSWrapper(DataSource ds) {
+        dataSource = ds
+    }
 }

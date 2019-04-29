@@ -10,3 +10,10 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto: update
+
+logging.level:
+  root: DEBUG
+  org.hibernate: ERROR
+
+discord:
+  token:

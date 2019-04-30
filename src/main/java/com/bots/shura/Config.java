@@ -8,7 +8,6 @@ import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.db.DBType;
 import com.bots.shura.db.DSWrapper;
 import com.bots.shura.db.DataSourceRouter;
-import com.bots.shura.db.repositories.CommandRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -72,6 +71,7 @@ class Config {
         // Create an AudioPlayer so Discord4J can receive audio data
         AudioPlayer player = playerManager.createPlayer();
         player.addListener(trackScheduler);
+        player.setVolume(40);
 
         TrackPlayer trackPlayer = new TrackPlayer();
         trackPlayer.setAudioPlayer(player);
@@ -86,8 +86,7 @@ class Config {
 
     @Bean
     DiscordClient discordClient(@Value("${discord.token}") String token,
-                                CommandProcessor commandProcessor,
-                                CommandRepository commandRepository) {
+                                CommandProcessor commandProcessor) {
         DiscordClient client = new DiscordClientBuilder(token).build();
         client.getEventDispatcher().on(MessageCreateEvent.class)
                 // subscribe is like block, in that it will *request* for action
@@ -96,12 +95,6 @@ class Config {
                 .subscribe(event -> {
                     final String content = StringUtils.trimToEmpty(event.getMessage().getContent().orElse(""));
                     if (StringUtils.isNoneBlank(content)) {
-                        com.bots.shura.db.entities.Command command = new com.bots.shura.db.entities.Command();
-                        command.setCommand(content);
-                        if (event.getMember().isPresent()) {
-                            command.setUser(event.getMember().get().getDisplayName());
-                        }
-                        commandRepository.save(command);
                         for (final Map.Entry<String, Command> entry : commandProcessor.getCommandMap().entrySet()) {
                             if (content.startsWith('!' + entry.getKey())) {
                                 entry.getValue().execute(event);

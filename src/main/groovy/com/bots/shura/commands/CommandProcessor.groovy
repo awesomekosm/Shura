@@ -3,13 +3,13 @@ package com.bots.shura.commands
 import com.bots.shura.audio.AudioLoader
 import com.bots.shura.audio.LavaPlayerAudioProvider
 import com.bots.shura.audio.TrackPlayer
+import com.bots.shura.db.repositories.TrackRepository
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.object.VoiceState
 import discord4j.core.object.entity.Member
 import discord4j.core.object.entity.VoiceChannel
 import discord4j.voice.VoiceConnection
-import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -33,10 +33,8 @@ class CommandProcessor {
     @Autowired
     TrackPlayer trackPlayer
 
-    static List<String> parseCommands(String input) {
-        input = StringUtils.trim(input)
-        return Arrays.asList(input.split(" "))
-    }
+    @Autowired
+    TrackRepository trackRepository
 
     class Pong implements Command {
         @Override
@@ -48,7 +46,7 @@ class CommandProcessor {
     class Play implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            def commands = parseCommands(event.getMessage().getContent().get())
+            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
             if (commands.size() > 1) {
                 playerManager.loadItem(commands.get(1), audioLoader)
             }
@@ -68,6 +66,20 @@ class CommandProcessor {
                             voiceConnection.disconnect()
                         }
                         voiceConnection = channel.join({ spec -> spec.setProvider(audioProvider) }).block()
+
+                        // check if player didn't finish playing tracks from previous shutdown/crash
+                        def unPlayedTracks = trackRepository.findAll()
+                        Optional.of(unPlayedTracks).ifPresent({ list ->
+                            if (list.size() > 0) {
+                                // prevent saving duplicates to db upon restart - probably a better way to do this without
+                                // blocking on loadItem
+                                audioLoader.reloadingTracks = true
+                                list.stream().forEach({ track ->
+                                    playerManager.loadItem(track.link, audioLoader).get()
+                                })
+                                audioLoader.reloadingTracks = false
+                            }
+                        })
                     }
                 }
             }
@@ -97,10 +109,23 @@ class CommandProcessor {
         }
     }
 
+    class Volume implements Command {
+        @Override
+        void execute(MessageCreateEvent event) {
+            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
+            if (commands.size() > 1) {
+                try {
+                    trackPlayer.audioPlayer.setVolume(Integer.parseInt(commands.get(1)))
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
+    }
+
     class Skip implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            def commands = parseCommands(event.getMessage().getContent().get())
+            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
             if (commands.size() > 1) {
                 try {
                     def skipNum = Integer.parseInt(commands.get(1))
@@ -131,6 +156,7 @@ class CommandProcessor {
         commandMap.put('pause', new Pause())
         commandMap.put('resume', new Resume())
         commandMap.put('skip', new Skip())
+        commandMap.put('volume', new Volume())
     }
 
     public Map<String, Command> getCommandMap() {

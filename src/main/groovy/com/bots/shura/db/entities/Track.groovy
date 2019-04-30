@@ -1,14 +1,18 @@
 package com.bots.shura.db.entities
 
+import com.bots.shura.audio.TrackOrigin
+
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
 
 @Entity
-class Command {
+class Track {
     @Id
     @GeneratedValue
     Long id
-    String command
-    String user
+    String name
+    String link
+    TrackOrigin origin
+    int time
 }

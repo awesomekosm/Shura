@@ -1,5 +1,7 @@
 package com.bots.shura.audio
 
+import com.bots.shura.db.entities.Track
+import com.bots.shura.db.repositories.TrackRepository
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
@@ -17,6 +19,9 @@ class TrackScheduler extends AudioEventAdapter {
 
     @Autowired
     TrackPlayer trackPlayer
+
+    @Autowired
+    TrackRepository  trackRepository
 
     Queue<AudioTrack> trackQueue = new LinkedList<>()
     boolean playing = false
@@ -41,9 +46,18 @@ class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         playing = false
+
+        // track ended - update db with success flag
+        Track dbTrack = trackRepository.findByName(track?.info?.title)
+        trackRepository.delete(dbTrack)
+
         while (trackPlayer.skipCount > 0) {
             trackPlayer.skipCount--
             try {
+                Track dbSkipTrack = trackRepository.findByName(track?.info?.title)
+                if (dbSkipTrack)
+                    trackRepository.delete(dbSkipTrack)
+
                 trackQueue.remove()
             } catch (NoSuchElementException ex) {}
         }

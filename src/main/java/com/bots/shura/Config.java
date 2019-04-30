@@ -1,12 +1,14 @@
 package com.bots.shura;
 
 import com.bots.shura.audio.LavaPlayerAudioProvider;
+import com.bots.shura.audio.TrackPlayer;
 import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.db.DBType;
 import com.bots.shura.db.DSWrapper;
 import com.bots.shura.db.DataSourceRouter;
+import com.bots.shura.db.repositories.CommandRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -15,6 +17,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBu
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,33 +68,45 @@ class Config {
     }
 
     @Bean
-    AudioPlayer audioPlayer(AudioPlayerManager playerManager, TrackScheduler trackScheduler) {
+    TrackPlayer trackPlayer(AudioPlayerManager playerManager, TrackScheduler trackScheduler) {
         // Create an AudioPlayer so Discord4J can receive audio data
         AudioPlayer player = playerManager.createPlayer();
         player.addListener(trackScheduler);
 
-        return player;
+        TrackPlayer trackPlayer = new TrackPlayer();
+        trackPlayer.setAudioPlayer(player);
+
+        return trackPlayer;
     }
 
     @Bean
-    LavaPlayerAudioProvider audioProvider(AudioPlayer audioPlayer) {
-        return new LavaPlayerAudioProvider(audioPlayer);
+    LavaPlayerAudioProvider audioProvider(TrackPlayer trackPlayer) {
+        return new LavaPlayerAudioProvider(trackPlayer.getAudioPlayer());
     }
 
     @Bean
-    DiscordClient discordClient(@Value("${discord.token}") String token, CommandProcessor commandProcessor) {
+    DiscordClient discordClient(@Value("${discord.token}") String token,
+                                CommandProcessor commandProcessor,
+                                CommandRepository commandRepository) {
         DiscordClient client = new DiscordClientBuilder(token).build();
         client.getEventDispatcher().on(MessageCreateEvent.class)
                 // subscribe is like block, in that it will *request* for action
                 // to be done, but instead of blocking the thread, waiting for it
                 // to finish, it will just execute the results asynchronously.
                 .subscribe(event -> {
-                    final String content = event.getMessage().getContent().orElse("");
-                    for (final Map.Entry<String, Command> entry : commandProcessor.getCommandMap().entrySet()) {
-                        // We will be using ! as our "prefix" to any command in the system.
-                        if (content.startsWith('!' + entry.getKey())) {
-                            entry.getValue().execute(event);
-                            break;
+                    final String content = StringUtils.trimToEmpty(event.getMessage().getContent().orElse(""));
+                    if (StringUtils.isNoneBlank(content)) {
+                        com.bots.shura.db.entities.Command command = new com.bots.shura.db.entities.Command();
+                        command.setCommand(content);
+                        if (event.getMember().isPresent()) {
+                            command.setUser(event.getMember().get().getDisplayName());
+                        }
+                        commandRepository.save(command);
+                        for (final Map.Entry<String, Command> entry : commandProcessor.getCommandMap().entrySet()) {
+                            if (content.startsWith('!' + entry.getKey())) {
+                                entry.getValue().execute(event);
+                                break;
+                            }
                         }
                     }
                 });

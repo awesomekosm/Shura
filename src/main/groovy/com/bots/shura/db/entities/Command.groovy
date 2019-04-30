@@ -5,8 +5,10 @@ import javax.persistence.GeneratedValue
 import javax.persistence.Id
 
 @Entity
-class State {
+class Command {
     @Id
     @GeneratedValue
     Long id
+    String command
+    String user
 }

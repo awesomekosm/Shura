@@ -1,15 +1,15 @@
 package com.bots.shura.commands
 
-import com.bots.shura.audio.LavaPlayerAudioProvider
 import com.bots.shura.audio.AudioLoader
-import com.bots.shura.audio.TrackScheduler
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
+import com.bots.shura.audio.LavaPlayerAudioProvider
+import com.bots.shura.audio.TrackPlayer
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.object.VoiceState
 import discord4j.core.object.entity.Member
 import discord4j.core.object.entity.VoiceChannel
 import discord4j.voice.VoiceConnection
+import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -31,7 +31,12 @@ class CommandProcessor {
     AudioLoader audioLoader
 
     @Autowired
-    AudioPlayer audioPlayer
+    TrackPlayer trackPlayer
+
+    static List<String> parseCommands(String input) {
+        input = StringUtils.trim(input)
+        return Arrays.asList(input.split(" "))
+    }
 
     class Pong implements Command {
         @Override
@@ -41,12 +46,12 @@ class CommandProcessor {
     }
 
     class Play implements Command {
-
         @Override
         void execute(MessageCreateEvent event) {
-            final String content = event.getMessage().getContent().get()
-            final List<String> command = Arrays.asList(content.split(" "))
-            playerManager.loadItem(command.get(1), audioLoader)
+            def commands = parseCommands(event.getMessage().getContent().get())
+            if (commands.size() > 1) {
+                playerManager.loadItem(commands.get(1), audioLoader)
+            }
         }
     }
 
@@ -81,21 +86,39 @@ class CommandProcessor {
     class Pause implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            audioPlayer.setPaused(true)
+            trackPlayer.audioPlayer.setPaused(true)
         }
     }
 
     class Resume implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            audioPlayer.setPaused(false)
+            trackPlayer.audioPlayer.setPaused(false)
         }
     }
 
     class Skip implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            audioPlayer.stopTrack()
+            def commands = parseCommands(event.getMessage().getContent().get())
+            if (commands.size() > 1) {
+                try {
+                    def skipNum = Integer.parseInt(commands.get(1))
+                    if (skipNum > 1) {
+                        //skipping current - end event in scheduler will deduct the rest
+                        trackPlayer.skipCount = skipNum - 1
+                        trackPlayer.audioPlayer.stopTrack()
+                    } else {
+                        // skip if 1 or less then, assume bad input and just skip 1 track
+                        trackPlayer.audioPlayer.stopTrack()
+                    }
+                } catch (NumberFormatException ex) {
+                    // assume second argument is bad and just skip 1 track
+                    trackPlayer.audioPlayer.stopTrack()
+                }
+            } else {
+                trackPlayer.audioPlayer.stopTrack()
+            }
         }
     }
 

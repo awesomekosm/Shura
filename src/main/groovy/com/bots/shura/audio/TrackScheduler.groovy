@@ -16,7 +16,7 @@ class TrackScheduler extends AudioEventAdapter {
     static Logger LOGGER = LoggerFactory.getLogger(TrackScheduler)
 
     @Autowired
-    AudioPlayer audioPlayer
+    TrackPlayer trackPlayer
 
     Queue<AudioTrack> trackQueue = new LinkedList<>()
     boolean playing = false
@@ -41,34 +41,14 @@ class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         playing = false
-        nextTrack(player)
-        //        if (endReason.mayStartNext && !trackQueue.isEmpty()) {
-        //            player.playTrack(trackQueue.peek())
-        //            return
-        //        }
-        //
-        //        switch (endReason){
-        //            case AudioTrackEndReason.FINISHED:
-        //                nextTrack(player)
-        //                break
-        //            case AudioTrackEndReason.LOAD_FAILED:
-        //                nextTrack(player)
-        //                break
-        //            case AudioTrackEndReason.STOPPED:
-        //                nextTrack(player)
-        //                break
-        //            case AudioTrackEndReason.REPLACED:
-        //                break
-        //            case AudioTrackEndReason.CLEANUP:
-        //                break
-        //        }
+        while (trackPlayer.skipCount > 0) {
+            trackPlayer.skipCount--
+            try {
+                trackQueue.remove()
+            } catch (NoSuchElementException ex) {}
+        }
 
-        // endReason == FINISHED: A track finished or died by an exception (mayStartNext = true).
-        // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
-        // endReason == STOPPED: The player was stopped.
-        // endReason == REPLACED: Another track started playing while this had not finished
-        // endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a
-        //                       clone of this back to your queue
+        nextTrack(player)
     }
 
     public void nextTrack(AudioPlayer player){
@@ -93,7 +73,7 @@ class TrackScheduler extends AudioEventAdapter {
     public void queue(AudioTrack track) {
         trackQueue.add(track)
         if (!playing) {
-            audioPlayer.playTrack(track)
+            trackPlayer.audioPlayer.playTrack(track)
             playing = true
         }
     }

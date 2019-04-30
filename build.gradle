@@ -27,6 +27,8 @@ dependencies {
 	implementation 'org.liquibase:liquibase-core'
 	implementation 'org.xerial:sqlite-jdbc:3.27.2.1'
 	implementation 'com.github.gwenn:sqlite-dialect:0.1.0'
+	implementation 'org.apache.commons:commons-lang3:3.9'
+	implementation 'org.apache.commons:commons-text:1.6'
 	/** https://github.com/Discord4J/Discord4J **/
 	implementation 'com.discord4j:discord4j-core:3.0.3'
 	/** https://github.com/sedmelluq/lavaplayer **/

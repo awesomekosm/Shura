@@ -19,9 +19,10 @@ import javax.annotation.PostConstruct
 
 @Component
 class CommandProcessor {
-    Map<String, Command> commandMap = new HashMap<>()
+    Map<CommandName, Command> commandMap = new HashMap<>()
 
     VoiceConnection voiceConnection
+    boolean inVoice = false
 
     @Autowired
     LavaPlayerAudioProvider audioProvider
@@ -67,10 +68,12 @@ class CommandProcessor {
                 if (voiceState != null) {
                     final VoiceChannel channel = voiceState.getChannel().block()
                     if (channel != null) {
-                        if(voiceConnection != null){
+                        if(voiceConnection != null && inVoice){
                             voiceConnection.disconnect()
+                            inVoice = false
                         }
                         voiceConnection = channel.join({ spec -> spec.setProvider(audioProvider) }).block()
+                        inVoice = true
 
                         // check if player didn't finish playing tracks from previous shutdown/crash
                         def unPlayedTracks = trackRepository.findAll()
@@ -94,8 +97,9 @@ class CommandProcessor {
     class Leave implements Command {
         @Override
         void execute(MessageCreateEvent event) {
-            if (voiceConnection != null) {
+            if (voiceConnection != null && inVoice) {
                 voiceConnection.disconnect()
+                inVoice = false
             }
         }
     }
@@ -158,17 +162,26 @@ class CommandProcessor {
 
     @PostConstruct
     public void init(){
-        commandMap.put('ping', new Pong())
-        commandMap.put('play', new Play())
-        commandMap.put('summon', new Summon())
-        commandMap.put('leave', new Leave())
-        commandMap.put('pause', new Pause())
-        commandMap.put('resume', new Resume())
-        commandMap.put('skip', new Skip())
-        commandMap.put('volume', new Volume())
+        commandMap.put(CommandName.PLAY, new Play())
+        commandMap.put(CommandName.SUMMON, new Summon())
+        commandMap.put(CommandName.LEAVE, new Leave())
+        commandMap.put(CommandName.PAUSE, new Pause())
+        commandMap.put(CommandName.RESUME, new Resume())
+        commandMap.put(CommandName.SKIP, new Skip())
+        commandMap.put(CommandName.VOLUME, new Volume())
     }
 
-    public Map<String, Command> getCommandMap() {
+    enum CommandName {
+        PLAY,
+        SUMMON,
+        LEAVE,
+        PAUSE,
+        RESUME,
+        SKIP,
+        VOLUME,
+    }
+
+    public Map<CommandName, Command> getCommandMap() {
         return commandMap
     }
 }

@@ -17,3 +17,7 @@ logging.level:
 
 discord:
   token:
+
+shura:
+  drunk-mode: true
+  thresh-hold: 3

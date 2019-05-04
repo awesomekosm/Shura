@@ -4,8 +4,6 @@ shura.datasource:
 
 hibernate.dialect: org.hibernate.dialect.SQLiteDialect
 spring:
-  liquibase:
-    enabled: false
   jpa:
     generate-ddl: true
     hibernate:

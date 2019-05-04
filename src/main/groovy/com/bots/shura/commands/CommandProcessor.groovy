@@ -74,20 +74,6 @@ class CommandProcessor {
                         }
                         voiceConnection = channel.join({ spec -> spec.setProvider(audioProvider) }).block()
                         inVoice = true
-
-                        // check if player didn't finish playing tracks from previous shutdown/crash
-                        def unPlayedTracks = trackRepository.findAll()
-                        Optional.of(unPlayedTracks).ifPresent({ list ->
-                            if (list.size() > 0) {
-                                // prevent saving duplicates to db upon restart - probably a better way to do this without
-                                // blocking on loadItem
-                                audioLoader.reloadingTracks = true
-                                list.stream().forEach({ track ->
-                                    playerManager.loadItem(track.link, audioLoader).get()
-                                })
-                                audioLoader.reloadingTracks = false
-                            }
-                        })
                     }
                 }
             }
@@ -183,5 +169,21 @@ class CommandProcessor {
 
     public Map<CommandName, Command> getCommandMap() {
         return commandMap
+    }
+
+    public void recoverOnStartup(){
+        // check if player didn't finish playing tracks from previous shutdown/crash
+        def unPlayedTracks = trackRepository.findAll()
+        Optional.of(unPlayedTracks).ifPresent({ list ->
+            if (list.size() > 0) {
+                // prevent saving duplicates to db upon restart - probably a better way to do this without
+                // blocking on loadItem
+                audioLoader.reloadingTracks = true
+                list.stream().forEach({ track ->
+                    playerManager.loadItem(track.link, audioLoader).get()
+                })
+                audioLoader.reloadingTracks = false
+            }
+        })
     }
 }

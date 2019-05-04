@@ -6,9 +6,6 @@ import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.Utils;
-import com.bots.shura.db.DBType;
-import com.bots.shura.db.DSWrapper;
-import com.bots.shura.db.DataSourceRouter;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -22,15 +19,12 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,23 +33,10 @@ class Config {
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
     @Bean
-    DSWrapper shuraWrapper(@Value("${shura.datasource.url}") String url,
-                           @Value("${shura.datasource.driver}") String driver) {
+    DataSource shuraDataSource(@Value("${shura.datasource.url}") String url,
+                               @Value("${shura.datasource.driver}") String driver) {
         DataSourceBuilder builder = DataSourceBuilder.create().url(url).driverClassName(driver);
-        return new DSWrapper(builder.build());
-    }
-
-    @Bean
-    @Primary
-    DataSource dataSource(@Qualifier("shuraWrapper") DSWrapper shuraWrapper) {
-        Map<Object, Object> targetDataSources = new HashMap<>();
-        targetDataSources.put(DBType.SHURA, shuraWrapper.getDataSource());
-
-        DataSourceRouter routingDataSource = new DataSourceRouter();
-        routingDataSource.setTargetDataSources(targetDataSources);
-        routingDataSource.setDefaultTargetDataSource(shuraWrapper.getDataSource());
-
-        return routingDataSource;
+        return builder.build();
     }
 
     @Bean
@@ -119,6 +100,8 @@ class Config {
                         }
                     }
                 });
+
+        commandProcessor.recoverOnStartup();
 
         return client;
     }

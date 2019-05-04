@@ -24,13 +24,14 @@ class AudioLoader implements AudioLoadResultHandler {
 
     boolean reloadingTracks
 
-    void saveTrack(AudioTrack track, TrackOrigin trackOrigin){
+    void saveTrack(AudioTrack track, TrackOrigin trackOrigin, String playlistName) {
         if(!reloadingTracks){
             trackRepository.save(new Track(
                     name: track?.info?.title,
                     link: track?.info?.uri,
                     time: 0,
-                    origin: trackOrigin
+                    origin: trackOrigin,
+                    playlistName: playlistName
             ))
         }
     }
@@ -38,16 +39,16 @@ class AudioLoader implements AudioLoadResultHandler {
     @Override
     public void trackLoaded(final AudioTrack track) {
         // LavaPlayer found an audio source for us to play
-        trackScheduler.queue(track)
-        saveTrack(track, TrackOrigin.SINGLE)
+        trackScheduler.queue(track, TrackOrigin.SINGLE, '')
+        saveTrack(track, TrackOrigin.SINGLE, '')
     }
 
     @Override
     public void playlistLoaded(final AudioPlaylist playlist) {
         // LavaPlayer found multiple AudioTracks from some playlist
         for (AudioTrack track : playlist.getTracks()) {
-            trackScheduler.queue(track)
-            saveTrack(track, TrackOrigin.PLAYLIST)
+            trackScheduler.queue(track, TrackOrigin.PLAYLIST, playlist.name)
+            saveTrack(track, TrackOrigin.PLAYLIST, playlist.name)
         }
     }
 

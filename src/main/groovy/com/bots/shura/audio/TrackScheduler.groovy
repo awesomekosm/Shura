@@ -23,7 +23,14 @@ class TrackScheduler extends AudioEventAdapter {
     @Autowired
     TrackRepository  trackRepository
 
-    Queue<AudioTrack> trackQueue = new LinkedList<>()
+    class LoadedTrack {
+        AudioTrack audio
+        TrackOrigin origin
+        String playlistName
+    }
+
+    Queue<LoadedTrack> trackQueue = new LinkedList<>()
+    LoadedTrack currentTrack
     boolean playing = false
 
     @Override
@@ -39,26 +46,27 @@ class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         // A track started playing
-        AudioTrack currentTrack = trackQueue.remove()
+        currentTrack = trackQueue.remove()
         playing = true
+    }
+
+    public void deleteFirstTrackByName(String name){
+        List<Track> dbTrack = trackRepository.findAllByName(name)
+        if(dbTrack != null && dbTrack.size() > 0)
+            trackRepository.delete(dbTrack[0])
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         playing = false
+        String trackName = track?.info?.title
 
-        // track ended - update db with success flag
-        Track dbTrack = trackRepository.findByName(track?.info?.title)
-        trackRepository.delete(dbTrack)
-
+        deleteFirstTrackByName(trackName)
         while (trackPlayer.skipCount > 0) {
             trackPlayer.skipCount--
             try {
-                Track dbSkipTrack = trackRepository.findByName(track?.info?.title)
-                if (dbSkipTrack)
-                    trackRepository.delete(dbSkipTrack)
-
-                trackQueue.remove()
+                trackName = trackQueue.remove().audio.info.title
+                deleteFirstTrackByName(trackName)
             } catch (NoSuchElementException ex) {}
         }
 
@@ -67,7 +75,7 @@ class TrackScheduler extends AudioEventAdapter {
 
     public void nextTrack(AudioPlayer player){
         if(!trackQueue.isEmpty()){
-            player.playTrack(trackQueue.peek())
+            player.playTrack(trackQueue.peek().audio)
         }
     }
 
@@ -84,11 +92,33 @@ class TrackScheduler extends AudioEventAdapter {
         nextTrack(player)
     }
 
-    public void queue(AudioTrack track) {
-        trackQueue.add(track)
+    public void queue(AudioTrack track, TrackOrigin origin, String playlistName) {
+        trackQueue.add(new LoadedTrack(
+                audio: track,
+                origin: origin,
+                playlistName: playlistName
+        ))
         if (!playing) {
             trackPlayer.audioPlayer.playTrack(track)
             playing = true
+        }
+    }
+
+    public void skipPlaylist() {
+        if (currentTrack != null && currentTrack.origin == TrackOrigin.PLAYLIST) {
+            LoadedTrack lt = trackQueue.peek()
+            if (lt != null && lt.origin == TrackOrigin.PLAYLIST && currentTrack.playlistName == lt.playlistName) {
+                while(!trackQueue.isEmpty() && lt != null && currentTrack.playlistName == lt.playlistName){
+                    def dbSkipTracks = trackRepository.findAllByName(lt.audio?.info?.title)
+                    if(dbSkipTracks.size() > 0 && dbSkipTracks[0].playlistName == lt.playlistName){
+                        trackRepository.delete(dbSkipTracks[0])
+                    }
+
+                    trackQueue.remove()
+                    lt = trackQueue.peek()
+                }
+                trackPlayer.audioPlayer.stopTrack()
+            }
         }
     }
 }

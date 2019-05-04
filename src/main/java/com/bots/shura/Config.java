@@ -71,7 +71,7 @@ class Config {
         // Create an AudioPlayer so Discord4J can receive audio data
         AudioPlayer player = playerManager.createPlayer();
         player.addListener(trackScheduler);
-        player.setVolume(40);
+        player.setVolume(20);
 
         TrackPlayer trackPlayer = new TrackPlayer();
         trackPlayer.setAudioPlayer(player);

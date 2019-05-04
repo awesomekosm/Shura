@@ -3,6 +3,7 @@ package com.bots.shura.commands
 import com.bots.shura.audio.AudioLoader
 import com.bots.shura.audio.LavaPlayerAudioProvider
 import com.bots.shura.audio.TrackPlayer
+import com.bots.shura.audio.TrackScheduler
 import com.bots.shura.db.repositories.TrackRepository
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
 import discord4j.core.event.domain.message.MessageCreateEvent
@@ -10,6 +11,7 @@ import discord4j.core.object.VoiceState
 import discord4j.core.object.entity.Member
 import discord4j.core.object.entity.VoiceChannel
 import discord4j.voice.VoiceConnection
+import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -35,6 +37,9 @@ class CommandProcessor {
 
     @Autowired
     TrackRepository trackRepository
+
+    @Autowired
+    TrackScheduler trackScheduler
 
     class Pong implements Command {
         @Override
@@ -138,8 +143,12 @@ class CommandProcessor {
                         trackPlayer.audioPlayer.stopTrack()
                     }
                 } catch (NumberFormatException ex) {
-                    // assume second argument is bad and just skip 1 track
-                    trackPlayer.audioPlayer.stopTrack()
+                    if (StringUtils.equals(commands.get(1), 'pl')) {
+                        trackScheduler.skipPlaylist()
+                    } else {
+                        // assume second argument is bad and just skip 1 track
+                        trackPlayer.audioPlayer.stopTrack()
+                    }
                 }
             } else {
                 trackPlayer.audioPlayer.stopTrack()

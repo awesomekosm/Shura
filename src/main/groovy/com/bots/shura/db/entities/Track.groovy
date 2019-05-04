@@ -13,6 +13,7 @@ class Track {
     Long id
     String name
     String link
+    String playlistName
     TrackOrigin origin
     int time
 }

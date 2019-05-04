@@ -1,0 +1,2 @@
+# Shura
+Discord Music Bot

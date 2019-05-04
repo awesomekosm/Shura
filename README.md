@@ -6,6 +6,9 @@ Discord Music Bot
 * Create an application @ https://discordapp.com/developers/applications
 * In settings click Bot
 * Copy token and add it to application.yml discord:token: YOUR TOKEN
+* Get client id of the application
+* Link to authorize shura in channels where you can invite
+* https://discordapp.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot
 * Have at least jdk 8
 * Execute gradlew on windows or gradlew on linux at the root of the directory
 * gradlew.bat bootJar

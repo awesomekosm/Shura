@@ -10,10 +10,10 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
-import discord4j.core.DiscordClient;
-import discord4j.core.DiscordClientBuilder;
-import discord4j.core.event.domain.message.MessageCreateEvent;
+import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.http.client.config.RequestConfig;
@@ -24,6 +24,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +47,9 @@ class Config {
         // Give 10 seconds to connect before timing out
         playerManager.setHttpRequestConfigurator(requestConfig ->
                 RequestConfig.copy(requestConfig).setConnectTimeout(10000).build());
-        // This is an optimization strategy that Discord4J can utilize.
-        playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
         // Allow playerManager to parse remote sources like YouTube links
         AudioSourceManagers.registerRemoteSources(playerManager);
+        AudioSourceManagers.registerLocalSource(playerManager);
         return playerManager;
     }
 
@@ -72,29 +72,29 @@ class Config {
     }
 
     @Bean
-    DiscordClient discordClient(@Value("${discord.token}") String token,
-                                @Value("${shura.drunk-mode}") boolean drunkMode,
-                                @Value("${shura.thresh-hold}") int threshHold,
-                                CommandProcessor commandProcessor) {
-        DiscordClient client = new DiscordClientBuilder(token).build();
-        client.getEventDispatcher().on(MessageCreateEvent.class)
-                // subscribe is like block, in that it will *request* for action
-                // to be done, but instead of blocking the thread, waiting for it
-                // to finish, it will just execute the results asynchronously.
-                .subscribe(event -> {
-                    final String content = StringUtils.trimToEmpty(event.getMessage().getContent().orElse(""));
-                    if (StringUtils.isNoneBlank(content)) {
-                        if (drunkMode) {
-                            List<String> input = Utils.parseCommands(content, 2);
-                            CommandProcessor.CommandName cmd = bestFitCommand(input.get(0).toUpperCase(), threshHold);
-                            if (cmd != null) {
-                                commandProcessor.getCommandMap().get(cmd).execute(event);
-                            }
-                        } else {
-                            for (final Map.Entry<CommandProcessor.CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
-                                if (content.startsWith('!' + entry.getKey().name())) {
-                                    entry.getValue().execute(event);
-                                    break;
+    JDABuilder discordClient(@Value("${discord.token}") String token,
+                             @Value("${shura.drunk-mode}") boolean drunkMode,
+                             @Value("${shura.thresh-hold}") int threshHold,
+                             CommandProcessor commandProcessor) {
+        JDABuilder client = new JDABuilder(AccountType.BOT)
+                .setToken(token)
+                .addEventListeners(new ListenerAdapter() {
+                    @Override
+                    public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
+                        final String content = StringUtils.trimToEmpty(event.getMessage().getContentRaw());
+                        if (StringUtils.isNoneBlank(content)) {
+                            if (drunkMode) {
+                                List<String> input = Utils.parseCommands(content, 2);
+                                CommandProcessor.CommandName cmd = bestFitCommand(input.get(0).toUpperCase(), threshHold);
+                                if (cmd != null) {
+                                    commandProcessor.getCommandMap().get(cmd).execute(event);
+                                }
+                            } else {
+                                for (final Map.Entry<CommandProcessor.CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
+                                    if (content.startsWith('!' + entry.getKey().name())) {
+                                        entry.getValue().execute(event);
+                                        break;
+                                    }
                                 }
                             }
                         }

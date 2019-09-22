@@ -49,4 +49,4 @@ Discord Music Bot
 # Thanks
 Great libraries that made this fun
 * https://github.com/sedmelluq/lavaplayer
-* https://github.com/Discord4J/Discord4J
+* https://github.com/DV8FromTheWorld/JDA

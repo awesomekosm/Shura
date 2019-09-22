@@ -1,9 +1,11 @@
 package com.bots.shura;
 
-import discord4j.core.DiscordClient;
+import net.dv8tion.jda.api.JDABuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import javax.security.auth.login.LoginException;
 
 /**
  * 3222528 permission integer <br>
@@ -12,10 +14,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 @SpringBootApplication
 public class ShuraApplication {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws LoginException {
         ConfigurableApplicationContext cac = SpringApplication.run(ShuraApplication.class, args);
 
-        DiscordClient client = cac.getBean(DiscordClient.class);
-        client.login().block();
+        JDABuilder client = cac.getBean(JDABuilder.class);
+        client.build(); // login
     }
 }

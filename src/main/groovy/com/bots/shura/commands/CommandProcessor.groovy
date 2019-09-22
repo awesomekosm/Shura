@@ -6,11 +6,9 @@ import com.bots.shura.audio.TrackPlayer
 import com.bots.shura.audio.TrackScheduler
 import com.bots.shura.db.repositories.TrackRepository
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
-import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.object.VoiceState
-import discord4j.core.object.entity.Member
-import discord4j.core.object.entity.VoiceChannel
-import discord4j.voice.VoiceConnection
+import net.dv8tion.jda.api.entities.*
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.managers.AudioManager
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -21,7 +19,6 @@ import javax.annotation.PostConstruct
 class CommandProcessor {
     Map<CommandName, Command> commandMap = new HashMap<>()
 
-    VoiceConnection voiceConnection
     boolean inVoice = false
 
     @Autowired
@@ -44,15 +41,16 @@ class CommandProcessor {
 
     class Pong implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            event.getMessage().getChannel().block().createMessage("Pong!").block()
+        void execute(GuildMessageReceivedEvent event) {
+            TextChannel textChannel = event.getChannel()
+            textChannel.sendMessage("Pong!").queue()
         }
     }
 
     class Play implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
+        void execute(GuildMessageReceivedEvent event) {
+            def commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2)
             if (commands.size() > 1) {
                 playerManager.loadItem(commands.get(1), audioLoader)
             }
@@ -61,30 +59,42 @@ class CommandProcessor {
 
     class Summon implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            final Member member = event.getMember().orElse(null)
+        void execute(GuildMessageReceivedEvent event) {
+            final Member member = event.getMember()
             if (member != null) {
-                final VoiceState voiceState = member.getVoiceState().block()
+                final GuildVoiceState voiceState = member.getVoiceState()
                 if (voiceState != null) {
-                    final VoiceChannel channel = voiceState.getChannel().block()
+                    final VoiceChannel channel = voiceState.getChannel()
                     if (channel != null) {
-                        if(voiceConnection != null && inVoice){
-                            voiceConnection.disconnect()
+                        AudioManager audioManager = channel.getGuild().getAudioManager();
+                        if (inVoice) {
+                            audioManager.closeAudioConnection()
                             inVoice = false
                         }
-                        voiceConnection = channel.join({ spec -> spec.setProvider(audioProvider) }).block()
+                        connectTo(channel, audioProvider)
                         inVoice = true
                     }
                 }
             }
         }
+
+        private void connectTo(VoiceChannel channel, LavaPlayerAudioProvider audioProvider) {
+            Guild guild = channel.getGuild()
+            // Get an audio manager for this guild, this will be created upon first use for each guild
+            AudioManager audioManager = guild.getAudioManager()
+            // The order of the following instructions does not matter!
+            // Set the sending handler to our echo system
+            audioManager.setSendingHandler(audioProvider)
+            // Connect to the voice channel
+            audioManager.openAudioConnection(channel)
+        }
     }
 
     class Leave implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            if (voiceConnection != null && inVoice) {
-                voiceConnection.disconnect()
+        void execute(GuildMessageReceivedEvent event) {
+            if (inVoice) {
+                event.getGuild().getAudioManager().closeAudioConnection()
                 inVoice = false
             }
         }
@@ -92,22 +102,22 @@ class CommandProcessor {
 
     class Pause implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
+        void execute(GuildMessageReceivedEvent event) {
             trackPlayer.audioPlayer.setPaused(true)
         }
     }
 
     class Resume implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
+        void execute(GuildMessageReceivedEvent event) {
             trackPlayer.audioPlayer.setPaused(false)
         }
     }
 
     class Volume implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
+        void execute(GuildMessageReceivedEvent event) {
+            def commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2)
             if (commands.size() > 1) {
                 try {
                     trackPlayer.audioPlayer.setVolume(Integer.parseInt(commands.get(1)))
@@ -119,8 +129,8 @@ class CommandProcessor {
 
     class Skip implements Command {
         @Override
-        void execute(MessageCreateEvent event) {
-            def commands = Utils.parseCommands(event.getMessage().getContent().get(), 2)
+        void execute(GuildMessageReceivedEvent event) {
+            def commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2)
             if (commands.size() > 1) {
                 try {
                     def skipNum = Integer.parseInt(commands.get(1))

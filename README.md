@@ -12,9 +12,9 @@ Discord Music Bot
 * Have at least jdk 8
 * Execute gradlew on windows or gradlew on linux at the root of the directory
 * gradlew.bat bootJar
-* Output will be in shura/build/libs/shura-0.0.1-SNAPSHOT.jar
+* Output will be in shura/build/libs/shura-1.0.0-SNAPSHOT.jar
 * This is a self contained jar, can be executed
-* java -jar shura-0.0.1-SNAPSHOT.jar
+* java -jar shura-1.0.0-SNAPSHOT.jar
 
 # Commands
 

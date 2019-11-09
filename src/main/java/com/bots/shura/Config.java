@@ -6,6 +6,7 @@ import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.Utils;
+import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -28,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 class Config {
@@ -44,6 +46,8 @@ class Config {
     AudioPlayerManager playerManager() {
         // Creates AudioPlayer instances and translates URLs to AudioTrack instances
         final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+        playerManager.enableGcMonitoring();
+        playerManager.setFrameBufferDuration((int) TimeUnit.SECONDS.toMillis(20));
         // Give 10 seconds to connect before timing out
         playerManager.setHttpRequestConfigurator(requestConfig ->
                 RequestConfig.copy(requestConfig).setConnectTimeout(10000).build());
@@ -78,6 +82,7 @@ class Config {
                              CommandProcessor commandProcessor) {
         JDABuilder client = new JDABuilder(AccountType.BOT)
                 .setToken(token)
+                .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
                     @Override
                     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {

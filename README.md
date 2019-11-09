@@ -46,6 +46,10 @@ Discord Music Bot
 * Shura has drunk mode enabled by default in application.yml, this means you don't have to type commands exactly
 * skop pley and !summie and volum will all work as if you typed it correctly
 
+# Platforms
+* Windows (x86 and x64)
+* Linux (x86 and x64, glibc >= 2.15)
+
 # Thanks
 Great libraries that made this fun
 * https://github.com/sedmelluq/lavaplayer

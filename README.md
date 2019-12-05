@@ -5,7 +5,7 @@ Discord Music Bot
 
 * Create an application @ https://discordapp.com/developers/applications
 * In settings click Bot
-* Copy token and add it to application.yml discord:token: YOUR TOKEN
+* Copy token and add it to application.yml discord:token: YOUR TOKEN or pass as -D arg
 * Get client id of the application
 * Link to authorize shura in channels where you can invite
 * https://discordapp.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot
@@ -49,6 +49,17 @@ Discord Music Bot
 # Platforms
 * Windows (x86 and x64)
 * Linux (x86 and x64, glibc >= 2.15)
+
+# Docker
+* Build
+`./gradlew bootJar`
+* Create container
+`docker build --tag local/shura:latest .`
+* Run
+`docker run --name shura --env JAVA_OPTS="-Ddiscord.token=YOUR_TOKEN" local/shura`
+
+Or
+* `./run YOUR_DISCORD_TOKEN`
 
 # Thanks
 Great libraries that made this fun

@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 
 @Component
@@ -18,6 +19,7 @@ class TrackScheduler extends AudioEventAdapter {
     static Logger LOGGER = LoggerFactory.getLogger(TrackScheduler)
 
     @Autowired
+    @Lazy
     TrackPlayer trackPlayer
 
     @Autowired

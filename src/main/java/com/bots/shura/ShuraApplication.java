@@ -14,10 +14,10 @@ import javax.security.auth.login.LoginException;
 @SpringBootApplication
 public class ShuraApplication {
 
-    public static void main(String[] args) throws LoginException {
+    public static void main(String[] args) throws LoginException, InterruptedException {
         ConfigurableApplicationContext cac = SpringApplication.run(ShuraApplication.class, args);
 
         JDABuilder client = cac.getBean(JDABuilder.class);
-        client.build(); // login
+        client.build().awaitReady(); // login
     }
 }

@@ -5,16 +5,31 @@ Discord Music Bot
 
 * Create an application @ https://discordapp.com/developers/applications
 * In settings click Bot
-* Copy token and add it to application.yml discord:token: YOUR TOKEN or pass as -D arg
 * Get client id of the application
 * Link to authorize shura in channels where you can invite
 * https://discordapp.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot
+
+### Lazy
+* Have at least docker 18+
+* cd into docker-only-build and `./run YOUR_DISCORD_TOKEN`
+    - will build *Shura* inside docker container from latest source
+    - remove old *Shura* container if exists
+    - start docker container at that point can use invite link above
+
+### Easy
+* Have at least jdk 8 and docker 18+
+* `./run YOUR_DISCORD_TOKEN` from shura
+    - will build latest using bundled gradle
+    - remove old *Shura* container if exists
+    - start docker container at that point can use invite link above
+
+### Hard
 * Have at least jdk 8
 * Execute gradlew on windows or gradlew on linux at the root of the directory
-* gradlew.bat bootJar
+* `gradlew.bat bootJar`
 * Output will be in shura/build/libs/shura-1.0.0-SNAPSHOT.jar
 * This is a self contained jar, can be executed
-* java -jar shura-1.0.0-SNAPSHOT.jar
+* `java -jar -Ddiscord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
 
 # Commands
 
@@ -57,9 +72,6 @@ Discord Music Bot
 `docker build --tag local/shura:latest .`
 * Run
 `docker run --name shura --env JAVA_OPTS="-Ddiscord.token=YOUR_TOKEN" local/shura`
-
-Or
-* `./run YOUR_DISCORD_TOKEN`
 
 # Thanks
 Great libraries that made this fun

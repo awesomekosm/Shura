@@ -12,7 +12,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -39,8 +38,7 @@ class Config {
     @Bean
     DataSource shuraDataSource(@Value("${shura.datasource.url}") String url,
                                @Value("${shura.datasource.driver}") String driver) {
-        DataSourceBuilder builder = DataSourceBuilder.create().url(url).driverClassName(driver);
-        return builder.build();
+        return DataSourceBuilder.create().url(url).driverClassName(driver).build();
     }
 
     @Bean
@@ -82,8 +80,7 @@ class Config {
                              @Value("${shura.drunk-mode}") boolean drunkMode,
                              @Value("${shura.thresh-hold}") int threshHold,
                              CommandProcessor commandProcessor) {
-        JDABuilder client = new JDABuilder(AccountType.BOT)
-                .setToken(token)
+        JDABuilder client = JDABuilder.createDefault(token)
                 .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
                     @Override
@@ -113,7 +110,7 @@ class Config {
         return client;
     }
 
-    private LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+    private final LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     private CommandProcessor.CommandName bestFitCommand(String userInput, int threshHold) {
         CommandProcessor.CommandName result = null;

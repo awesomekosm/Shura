@@ -5,6 +5,7 @@ import com.bots.shura.audio.TrackPlayer;
 import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
+import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
 import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -79,7 +81,8 @@ class Config {
     JDABuilder discordClient(@Value("${discord.token}") String token,
                              @Value("${shura.drunk-mode}") boolean drunkMode,
                              @Value("${shura.thresh-hold}") int threshHold,
-                             CommandProcessor commandProcessor) {
+                             CommandProcessor commandProcessor,
+                             Map<CommandName, List<String>> commandAliases) {
         JDABuilder client = JDABuilder.createDefault(token)
                 .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
@@ -89,12 +92,12 @@ class Config {
                         if (StringUtils.isNoneBlank(content)) {
                             if (drunkMode) {
                                 List<String> input = Utils.parseCommands(content, 2);
-                                CommandProcessor.CommandName cmd = bestFitCommand(input.get(0).toUpperCase(), threshHold);
+                                CommandName cmd = bestFitCommand(commandAliases, input.get(0).toUpperCase(), threshHold);
                                 if (cmd != null) {
                                     commandProcessor.getCommandMap().get(cmd).execute(event);
                                 }
                             } else {
-                                for (final Map.Entry<CommandProcessor.CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
+                                for (final Map.Entry<CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
                                     if (content.startsWith('!' + entry.getKey().name())) {
                                         entry.getValue().execute(event);
                                         break;
@@ -112,14 +115,30 @@ class Config {
 
     private final LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
-    private CommandProcessor.CommandName bestFitCommand(String userInput, int threshHold) {
-        CommandProcessor.CommandName result = null;
+    @Bean
+    Map<CommandName, List<String>> commandAliases() {
+        Map<CommandName, List<String>> commandAliases = new HashMap<>();
+        commandAliases.put(CommandName.PLAY, List.of("PLAY", "ПЛЕЙ", "ИГРАТЬ"));
+        commandAliases.put(CommandName.SUMMON, List.of("SUMMON", "СУММОН", "ВЫЗЫВАТЬ"));
+        commandAliases.put(CommandName.LEAVE, List.of("LEAVE", "ЛИВ", "ПОКИНУТЬ"));
+        commandAliases.put(CommandName.PAUSE, List.of("PAUSE", "ПАУЗ"));
+        commandAliases.put(CommandName.RESUME, List.of("RESUME", "РЕЗЮМ", "ПРОДОЛЖИТЬ"));
+        commandAliases.put(CommandName.SKIP, List.of("SKIP", "СКИП", "ПРОПУСК"));
+        commandAliases.put(CommandName.VOLUME, List.of("VOLUME", "ВОЛЬЮМ", "ГРОМКОСТЬ"));
+
+        return commandAliases;
+    }
+
+    private CommandName bestFitCommand(Map<CommandName, List<String>> commandAliases, String userInput, int threshHold) {
+        CommandName result = null;
         int currentDistance = threshHold;
-        for (CommandProcessor.CommandName val : CommandProcessor.CommandName.values()) {
-            int distance = levenshteinDistance.apply('!' + val.name(), userInput);
-            if (distance < currentDistance) {
-                result = val;
-                currentDistance = distance;
+        for (CommandName val : CommandName.values()) {
+            for (String alias : commandAliases.get(val)) {
+                int distance = levenshteinDistance.apply('!' + alias, userInput);
+                if (distance < currentDistance) {
+                    result = val;
+                    currentDistance = distance;
+                }
             }
         }
         if (result != null)

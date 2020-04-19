@@ -19,8 +19,6 @@ import javax.annotation.PostConstruct
 class CommandProcessor {
     Map<CommandName, Command> commandMap = new HashMap<>()
 
-    boolean inVoice = false
-
     @Autowired
     LavaPlayerAudioProvider audioProvider
 
@@ -58,6 +56,9 @@ class CommandProcessor {
     }
 
     class Summon implements Command {
+
+        VoiceChannel currentChannel = null
+
         @Override
         void execute(GuildMessageReceivedEvent event) {
             final Member member = event.getMember()
@@ -66,13 +67,12 @@ class CommandProcessor {
                 if (voiceState != null) {
                     final VoiceChannel channel = voiceState.getChannel()
                     if (channel != null) {
-                        AudioManager audioManager = channel.getGuild().getAudioManager();
-                        if (inVoice) {
-                            audioManager.closeAudioConnection()
-                            inVoice = false
+                        // close existing connection
+                        if (currentChannel != null) {
+                            currentChannel.getGuild().getAudioManager().closeAudioConnection()
                         }
-                        connectTo(channel, audioProvider)
-                        inVoice = true
+                        currentChannel = channel;
+                        connectTo(currentChannel, audioProvider)
                     }
                 }
             }
@@ -93,10 +93,7 @@ class CommandProcessor {
     class Leave implements Command {
         @Override
         void execute(GuildMessageReceivedEvent event) {
-            if (inVoice) {
-                event.getGuild().getAudioManager().closeAudioConnection()
-                inVoice = false
-            }
+            event.getGuild().getAudioManager().closeAudioConnection()
         }
     }
 

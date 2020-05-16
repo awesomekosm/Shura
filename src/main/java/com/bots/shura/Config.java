@@ -21,8 +21,6 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,9 +36,8 @@ class Config {
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
     @Bean
-    DataSource shuraDataSource(@Value("${shura.datasource.url}") String url,
-                               @Value("${shura.datasource.driver}") String driver) {
-        return DataSourceBuilder.create().url(url).driverClassName(driver).build();
+    DataSource shuraDataSource(ShuraProperties shuraProperties) {
+        return shuraProperties.getDatasource().initializeDataSourceBuilder().build();
     }
 
     @Bean
@@ -78,21 +75,19 @@ class Config {
     }
 
     @Bean
-    JDABuilder discordClient(@Value("${discord.token}") String token,
-                             @Value("${shura.drunk-mode}") boolean drunkMode,
-                             @Value("${shura.thresh-hold}") int threshHold,
+    JDABuilder discordClient(ShuraProperties shuraProperties,
                              CommandProcessor commandProcessor,
                              Map<CommandName, List<String>> commandAliases) {
-        JDABuilder client = JDABuilder.createDefault(token)
+        JDABuilder client = JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
                 .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
                     @Override
                     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
                         final String content = StringUtils.trimToEmpty(event.getMessage().getContentRaw());
                         if (StringUtils.isNoneBlank(content)) {
-                            if (drunkMode) {
+                            if (shuraProperties.isDrunkMode()) {
                                 List<String> input = Utils.parseCommands(content, 2);
-                                CommandName cmd = bestFitCommand(commandAliases, input.get(0).toUpperCase(), threshHold);
+                                CommandName cmd = bestFitCommand(commandAliases, input.get(0).toUpperCase(), shuraProperties.getThreshHold());
                                 if (cmd != null) {
                                     commandProcessor.getCommandMap().get(cmd).execute(event);
                                 }

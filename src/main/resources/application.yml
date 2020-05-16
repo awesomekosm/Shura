@@ -11,9 +11,6 @@ logging.level:
   root: INFO
   org.hibernate: ERROR
 
-discord:
-  token:
-
 shura:
   datasource:
     url: jdbc:sqlite:shura.db

@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.5_10
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.7_10
 
 ARG JAVA_OPTS
 

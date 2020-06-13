@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.5_10 AS builder
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.7_10 AS builder
 
 ARG JAVA_OPTS
 
@@ -11,7 +11,7 @@ RUN apk add git && \
     cp /opt/Shura/build/libs/shura-*.jar /opt/app.jar && \
     rm -rf /opt/shura-source
 
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.5_10
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.7_10
 
 RUN addgroup -S appgroup && \
     adduser -S appuser -G appgroup

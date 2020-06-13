@@ -4,10 +4,11 @@ ARG JAVA_OPTS
 
 RUN apk --no-cache upgrade && \
     addgroup -S appgroup && \
-    adduser -S appuser -G appgroup
+    adduser -S appuser -G appgroup && \
+    chown appuser: /opt && \
+    chmod u+w /opt
 
 ADD --chown=appuser:appgroup build/libs/shura-*.jar /opt/app.jar
-RUN chmod 777 /opt
 
 WORKDIR /opt
 

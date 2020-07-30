@@ -17,14 +17,14 @@ Discord Music Bot
     - start docker container at that point can use invite link above
 
 ### Easy
-* Have at least jdk 8 and docker 18+
+* Have at least jdk 11 and docker 18+
 * `./run YOUR_DISCORD_TOKEN` from shura
     - will build latest using bundled maven
     - remove old *Shura* container if exists
     - start docker container at that point can use invite link above
 
 ### Hard
-* Have at least jdk 8
+* Have at least jdk 11
 * Execute `mvnw.cmd` on windows or `mvnw` on linux at the root of the directory
 * `./mvnw package`
 * Output will be in shura/target/shura-1.0.0-SNAPSHOT.jar
@@ -36,7 +36,7 @@ Discord Music Bot
 ## PLAY
 * Can play anything supported by https://github.com/sedmelluq/lavaplayer
 * example
-* !play https://www.youtube.com/watch?v=z8pknnncODo
+* !play https://www.youtube.com/watch?v=miomuSGoPzI
 ## SUMMON
 * calls bot to the same voice channel as the user typing in command
 * !summon

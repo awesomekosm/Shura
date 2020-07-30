@@ -1,8 +1,6 @@
 #!/bin/bash
 
-./gradlew --no-daemon clean
-
-./gradlew --no-daemon bootJar
+./mvnw clean package
 
 docker build --tag local/shura:latest .
 

@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Queue;
 
 @Component
@@ -91,18 +90,13 @@ public class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         playing = false;
-        final AudioTrackInfo info = (track == null ? null : track.getInfo());
-        String trackName = (info == null ? null : info.title);
-
-        deleteFirstTrackByName(trackName);
+        deleteFirstTrackByName(track.getInfo().title);
         while (trackPlayer.getSkipCount() > 0) {
-            trackPlayer.setSkipCount(trackPlayer.getSkipCount() - 1);
-            try {
-                trackName = trackQueue.remove().getAudio().getInfo().title;
-                deleteFirstTrackByName(trackName);
-            } catch (NoSuchElementException ex) {
-                LOGGER.error("Track ended and the queue was empty", ex);
+            LoadedTrack loadedTrack = trackQueue.poll();
+            if (loadedTrack != null) {
+                deleteFirstTrackByName(loadedTrack.getAudio().getInfo().title);
             }
+            trackPlayer.setSkipCount(trackPlayer.getSkipCount() - 1);
         }
 
         nextTrack(player);
@@ -159,8 +153,6 @@ public class TrackScheduler extends AudioEventAdapter {
 
                 trackPlayer.getAudioPlayer().stopTrack();
             }
-
         }
-
     }
 }

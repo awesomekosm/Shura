@@ -3,11 +3,11 @@ Discord Music Bot
 
 # Use
 
-* Create an application @ https://discordapp.com/developers/applications
+* Create an application @ https://discord.com/developers/applications
 * In settings click Bot
 * Get client id of the application
 * Link to authorize shura in channels where you can invite
-    - `https://discordapp.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot`
+    - `https://discord.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot`
 
 ### Lazy
 * Have at least docker 18+

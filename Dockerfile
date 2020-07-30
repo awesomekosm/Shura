@@ -8,7 +8,7 @@ RUN apk --no-cache upgrade && \
     chown appuser: /opt && \
     chmod u+w /opt
 
-ADD --chown=appuser:appgroup build/libs/shura-*.jar /opt/app.jar
+ADD --chown=appuser:appgroup target/shura-*.jar /opt/app.jar
 
 WORKDIR /opt
 

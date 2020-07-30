@@ -27,7 +27,7 @@ public class GuildMusic {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GuildMusic.class);
 
-    private final VoiceChannel voiceChannel;
+    private VoiceChannel voiceChannel;
 
     private final AudioLoader audioLoader;
 
@@ -61,11 +61,11 @@ public class GuildMusic {
             this.audioProvider = new LavaPlayerAudioProvider(audioPlayer);
         }
 
-        connectTo(voiceChannel, audioProvider);
+        connectToVoiceChannel(voiceChannel, audioProvider);
         recoverOnStartup();
     }
 
-    private void connectTo(VoiceChannel channel, LavaPlayerAudioProvider audioProvider) {
+    private void connectToVoiceChannel(VoiceChannel channel, LavaPlayerAudioProvider audioProvider) {
         Guild guild = channel.getGuild();
         // Get an audio manager for this guild, this will be created upon first use for each guild
         AudioManager audioManager = guild.getAudioManager();
@@ -75,7 +75,6 @@ public class GuildMusic {
         // Connect to the voice channel
         audioManager.openAudioConnection(channel);
     }
-
 
     private AudioPlayerManager playerManager() {
         // Creates AudioPlayer instances and translates URLs to AudioTrack instances
@@ -144,7 +143,13 @@ public class GuildMusic {
         });
     }
 
-    public void reconnectVoiceChannel() {
-        connectTo(voiceChannel, audioProvider);
+    /**
+     * Switch voice channel same guild without losing audio
+     *
+     * @param voiceChannel new voice channel
+     */
+    public void reconnectVoiceChannel(VoiceChannel voiceChannel) {
+        connectToVoiceChannel(voiceChannel, audioProvider);
+        this.voiceChannel = voiceChannel;
     }
 }

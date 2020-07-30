@@ -77,9 +77,7 @@ public class CommandProcessor {
                         if (guildMusic == null) {
                             guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository));
                         } else {
-                            safeGuildOperation(guildId, (gm)-> {
-                                gm.reconnectVoiceChannel();
-                            });
+                            safeGuildOperation(guildId, (gm) -> gm.reconnectVoiceChannel(channel));
                         }
                     }
                 }

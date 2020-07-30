@@ -6,7 +6,7 @@ RUN apk --no-cache upgrade && \
     apk add git && \
     git --version && \
     cd /opt && \
-    git clone --single-branch --branch v2 https://github.com/Z-EMB/Shura.git && \
+    git clone https://github.com/Z-EMB/Shura.git && \
     cd Shura && \
     ./mvnw package && \
     cp /opt/Shura/target/shura-*.jar /opt/app.jar && \

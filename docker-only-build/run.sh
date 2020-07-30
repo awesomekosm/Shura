@@ -1,5 +1,7 @@
 #!/bin/bash
 
+docker rmi local/shura
+
 docker build --pull --no-cache --tag local/shura:latest .
 
 docker rm -f shura || true

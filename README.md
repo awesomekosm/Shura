@@ -19,15 +19,15 @@ Discord Music Bot
 ### Easy
 * Have at least jdk 8 and docker 18+
 * `./run YOUR_DISCORD_TOKEN` from shura
-    - will build latest using bundled gradle
+    - will build latest using bundled maven
     - remove old *Shura* container if exists
     - start docker container at that point can use invite link above
 
 ### Hard
 * Have at least jdk 8
-* Execute gradlew on windows or gradlew on linux at the root of the directory
-* `gradlew.bat bootJar`
-* Output will be in shura/build/libs/shura-1.0.0-SNAPSHOT.jar
+* Execute `mvnw.cmd` on windows or `mvnw` on linux at the root of the directory
+* `./mvnw package`
+* Output will be in shura/target/shura-1.0.0-SNAPSHOT.jar
 * This is a self contained jar, can be executed
 * `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
 
@@ -67,7 +67,7 @@ Discord Music Bot
 
 # Docker
 * Build
-`./gradlew bootJar`
+`./mvnw package`
 * Create container
 `docker build --tag local/shura:latest .`
 * Run

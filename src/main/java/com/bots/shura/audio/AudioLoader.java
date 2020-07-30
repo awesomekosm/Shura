@@ -8,9 +8,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
-@Component
 public class AudioLoader implements AudioLoadResultHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
@@ -26,6 +24,7 @@ public class AudioLoader implements AudioLoadResultHandler {
     public void saveTrack(AudioTrack track, TrackOrigin trackOrigin, String playlistName) {
         if (!reloadingTracks) {
             Track repositoryTrack = new Track();
+            repositoryTrack.setGuildId(trackScheduler.getTrackPlayer().getGuildId());
             repositoryTrack.setName(track.getInfo().title);
             repositoryTrack.setLink(track.getInfo().uri);
             repositoryTrack.setPlaylistName(playlistName);

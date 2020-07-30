@@ -10,14 +10,12 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-@Component
+
 public class TrackScheduler extends AudioEventAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TrackScheduler.class);
@@ -28,7 +26,7 @@ public class TrackScheduler extends AudioEventAdapter {
     private LoadedTrack currentTrack;
     private boolean playing = false;
 
-    public TrackScheduler(@Lazy TrackPlayer trackPlayer, TrackRepository trackRepository) {
+    public TrackScheduler(TrackPlayer trackPlayer, TrackRepository trackRepository) {
         this.trackPlayer = trackPlayer;
         this.trackRepository = trackRepository;
     }
@@ -81,7 +79,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void deleteFirstTrackByName(String name) {
-        List<Track> dbTrack = trackRepository.findAllByName(name);
+        List<Track> dbTrack = trackRepository.findAllByNameAndGuildId(name, trackPlayer.getGuildId());
         if (dbTrack != null && dbTrack.size() > 0) {
             trackRepository.delete(dbTrack.get(0));
         }
@@ -142,17 +140,20 @@ public class TrackScheduler extends AudioEventAdapter {
                 while (!trackQueue.isEmpty() && lt != null && currentTrack.getPlaylistName().equals(lt.getPlaylistName())) {
                     final AudioTrack audio = lt.getAudio();
                     final AudioTrackInfo info = (audio == null ? null : audio.getInfo());
-                    List<Track> dbSkipTracks = trackRepository.findAllByName((info == null ? null : info.title));
+                    List<Track> dbSkipTracks = trackRepository.findAllByNameAndGuildId(info == null ? "" : info.title, trackPlayer.getGuildId());
                     if (dbSkipTracks.size() > 0 && dbSkipTracks.get(0).getPlaylistName().equals(lt.getPlaylistName())) {
                         trackRepository.delete(dbSkipTracks.get(0));
                     }
-
                     trackQueue.remove();
                     lt = trackQueue.peek();
                 }
-
                 trackPlayer.getAudioPlayer().stopTrack();
             }
         }
+    }
+
+    public TrackPlayer getTrackPlayer() {
+        return trackPlayer;
+
     }
 }

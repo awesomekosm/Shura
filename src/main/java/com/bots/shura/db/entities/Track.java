@@ -11,6 +11,7 @@ public class Track {
     @Id
     @GeneratedValue
     private Long id;
+    private long guildId;
     private String name;
     private String link;
     private String playlistName;
@@ -23,6 +24,14 @@ public class Track {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public long getGuildId() {
+        return guildId;
+    }
+
+    public void setGuildId(long guildId) {
+        this.guildId = guildId;
     }
 
     public String getName() {

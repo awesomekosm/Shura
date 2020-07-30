@@ -1,24 +1,15 @@
 package com.bots.shura;
 
-import com.bots.shura.audio.LavaPlayerAudioProvider;
-import com.bots.shura.audio.TrackPlayer;
-import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
 import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
-import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -29,56 +20,22 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
-class Config {
+public class Config {
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
     @Bean
-    DataSource shuraDataSource(ShuraProperties shuraProperties) {
+    public DataSource shuraDataSource(ShuraProperties shuraProperties) {
         return shuraProperties.getDatasource().initializeDataSourceBuilder().build();
     }
 
     @Bean
-    AudioPlayerManager playerManager() {
-        // Creates AudioPlayer instances and translates URLs to AudioTrack instances
-        final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
-        playerManager.enableGcMonitoring();
-        playerManager.setFrameBufferDuration((int) TimeUnit.SECONDS.toMillis(20));
-        // Give 10 seconds to connect before timing out
-        playerManager.setHttpRequestConfigurator(requestConfig ->
-                RequestConfig.copy(requestConfig).setConnectTimeout(10000).build());
-        // Allow playerManager to parse remote sources like YouTube links
-        AudioSourceManagers.registerRemoteSources(playerManager);
-        AudioSourceManagers.registerLocalSource(playerManager);
-        return playerManager;
-    }
-
-    @Bean
-    TrackPlayer trackPlayer(AudioPlayerManager playerManager, TrackScheduler trackScheduler) {
-        // Create an AudioPlayer so Discord4J can receive audio data
-        AudioPlayer player = playerManager.createPlayer();
-        player.addListener(trackScheduler);
-        player.setVolume(20);
-
-        TrackPlayer trackPlayer = new TrackPlayer();
-        trackPlayer.setAudioPlayer(player);
-
-        return trackPlayer;
-    }
-
-    @Bean
-    LavaPlayerAudioProvider audioProvider(TrackPlayer trackPlayer) {
-        return new LavaPlayerAudioProvider(trackPlayer.getAudioPlayer());
-    }
-
-    @Bean
-    JDABuilder discordClient(ShuraProperties shuraProperties,
+    public JDABuilder discordClient(ShuraProperties shuraProperties,
                              CommandProcessor commandProcessor,
                              Map<CommandName, List<String>> commandAliases) {
-        JDABuilder client = JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
+
+        return JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
                 .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
                     @Override
@@ -102,16 +59,12 @@ class Config {
                         }
                     }
                 });
-
-        commandProcessor.recoverOnStartup();
-
-        return client;
     }
 
     private final LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
     @Bean
-    Map<CommandName, List<String>> commandAliases() {
+    public Map<CommandName, List<String>> commandAliases() {
         Map<CommandName, List<String>> commandAliases = new HashMap<>();
         commandAliases.put(CommandName.PLAY, List.of("PLAY", "ПЛЕЙ", "ИГРАТЬ"));
         commandAliases.put(CommandName.SUMMON, List.of("SUMMON", "СУММОН", "ВЫЗЫВАТЬ"));
@@ -141,5 +94,4 @@ class Config {
 
         return result;
     }
-
 }

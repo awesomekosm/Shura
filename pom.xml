@@ -63,13 +63,13 @@
             <!-- https://github.com/DV8FromTheWorld/JDA -->
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>4.2.0_222</version>
+            <version>4.2.0_226</version>
         </dependency>
         <dependency>
             <!-- https://github.com/sedmelluq/lavaplayer -->
             <groupId>com.sedmelluq</groupId>
             <artifactId>lavaplayer</artifactId>
-            <version>1.3.64</version>
+            <version>1.3.66</version>
         </dependency>
         <dependency>
             <!-- https://github.com/sedmelluq/jda-nas -->

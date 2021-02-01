@@ -1,6 +1,6 @@
 package com.bots.shura.commands;
 
-import com.bots.shura.db.repositories.TrackRepository;
+import com.bots.shura.db.TrackRepository;
 import com.bots.shura.guild.GuildMusic;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
@@ -9,13 +9,11 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
 public class CommandProcessor {
 
     private final Map<Long, GuildMusic> guildMusicConnections = new HashMap<>();

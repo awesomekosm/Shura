@@ -12,25 +12,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nonnull;
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Configuration
 public class Config {
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
-    @Bean
-    public DataSource shuraDataSource(ShuraProperties shuraProperties) {
-        return shuraProperties.getDatasource().initializeDataSourceBuilder().build();
-    }
-
-    @Bean
     public JDABuilder discordClient(ShuraProperties shuraProperties,
                              CommandProcessor commandProcessor,
                              Map<CommandName, List<String>> commandAliases) {
@@ -63,7 +53,6 @@ public class Config {
 
     private final LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
-    @Bean
     public Map<CommandName, List<String>> commandAliases() {
         Map<CommandName, List<String>> commandAliases = new HashMap<>();
         commandAliases.put(CommandName.PLAY, List.of("PLAY", "ПЛЕЙ", "ИГРАТЬ"));

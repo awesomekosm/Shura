@@ -1,7 +1,7 @@
 package com.bots.shura.audio;
 
-import com.bots.shura.db.entities.Track;
-import com.bots.shura.db.repositories.TrackRepository;
+import com.bots.shura.db.Track;
+import com.bots.shura.db.TrackRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -81,7 +81,7 @@ public class TrackScheduler extends AudioEventAdapter {
     public void deleteFirstTrackByName(String name) {
         List<Track> dbTrack = trackRepository.findAllByNameAndGuildId(name, trackPlayer.getGuildId());
         if (dbTrack != null && dbTrack.size() > 0) {
-            trackRepository.delete(dbTrack.get(0));
+            trackRepository.session(() -> dbTrack.get(0).delete());
         }
     }
 
@@ -141,8 +141,8 @@ public class TrackScheduler extends AudioEventAdapter {
                     final AudioTrack audio = lt.getAudio();
                     final AudioTrackInfo info = (audio == null ? null : audio.getInfo());
                     List<Track> dbSkipTracks = trackRepository.findAllByNameAndGuildId(info == null ? "" : info.title, trackPlayer.getGuildId());
-                    if (dbSkipTracks.size() > 0 && dbSkipTracks.get(0).getPlaylistName().equals(lt.getPlaylistName())) {
-                        trackRepository.delete(dbSkipTracks.get(0));
+                    if (dbSkipTracks.size() > 0 && dbSkipTracks.get(0).get(Track.PLAYLIST_NAME).equals(lt.getPlaylistName())) {
+                        trackRepository.session(() -> dbSkipTracks.get(0).delete());
                     }
                     trackQueue.remove();
                     lt = trackQueue.peek();

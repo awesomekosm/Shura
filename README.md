@@ -29,7 +29,7 @@ Discord Music Bot
 * `./mvnw package`
 * Output will be in shura/target/shura-1.0.0-SNAPSHOT.jar
 * This is a self contained jar, can be executed
-* `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
+* `java -jar -Ddiscord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
 
 # Commands
 
@@ -71,7 +71,7 @@ Discord Music Bot
 * Create container
 `docker build --tag local/shura:latest .`
 * Run
-`docker run --name shura --env JAVA_OPTS="-Dshura.discord.token=YOUR_TOKEN" local/shura`
+`docker run --name shura --env JAVA_OPTS="-Ddiscord.token=YOUR_TOKEN" local/shura`
 
 # Thanks
 Great libraries that made this fun

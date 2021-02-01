@@ -1,19 +1,14 @@
 package com.bots.shura;
 
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.yaml.snakeyaml.Yaml;
 
-@Configuration
-@EnableConfigurationProperties
-@ConfigurationProperties(prefix = "shura")
+import java.io.InputStream;
+
 public class ShuraProperties {
-
-    private DataSourceProperties datasource;
     private boolean drunkMode;
     private int threshHold;
     private Discord discord;
+    DataSourceProperties dataSourceProperties;
 
     public static class Discord {
         private String token;
@@ -27,12 +22,25 @@ public class ShuraProperties {
         }
     }
 
-    public DataSourceProperties getDatasource() {
-        return datasource;
-    }
+    public static class DataSourceProperties {
+        private String url;
+        private String driver;
 
-    public void setDatasource(DataSourceProperties datasource) {
-        this.datasource = datasource;
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getDriver() {
+            return driver;
+        }
+
+        public void setDriver(String driver) {
+            this.driver = driver;
+        }
     }
 
     public boolean isDrunkMode() {
@@ -57,5 +65,36 @@ public class ShuraProperties {
 
     public void setDiscord(Discord discord) {
         this.discord = discord;
+    }
+
+    public DataSourceProperties getDataSourceProperties() {
+        return dataSourceProperties;
+    }
+
+    public void setDataSourceProperties(DataSourceProperties dataSourceProperties) {
+        this.dataSourceProperties = dataSourceProperties;
+    }
+
+    public ShuraProperties load() {
+        Yaml yaml = new Yaml();
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("application.yml");
+        ShuraProperties shuraProperties = yaml.load(inputStream);
+
+        String envDiscordToken = System.getenv("DISCORD_TOKEN");
+        String propDiscordToken = System.getProperty("discord.token");
+        String discordToken = envDiscordToken;
+        if (propDiscordToken != null) {
+            discordToken = propDiscordToken;
+        }
+        if (discordToken != null) {
+            if (shuraProperties.getDiscord() != null) {
+                shuraProperties.getDiscord().setToken(discordToken);
+            } else {
+                Discord discord = new Discord();
+                discord.setToken(discordToken);
+            }
+        }
+
+        return shuraProperties;
     }
 }

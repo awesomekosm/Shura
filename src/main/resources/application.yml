@@ -1,21 +1,8 @@
-spring:
-  jpa:
-    generate-ddl: true
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.SQLiteDialect
-
-logging.level:
-  root: INFO
-  org.hibernate: ERROR
-
-shura:
-  datasource:
-    url: jdbc:sqlite:shura.db
-    driver: org.sqlite.JDBC
-  drunk-mode: true
-  thresh-hold: 3
-  discord:
-    token:
+!!com.bots.shura.ShuraProperties
+dataSourceProperties:
+  url: jdbc:sqlite:shura.db
+  driver: org.sqlite.JDBC
+drunkMode: true
+threshHold: 3
+discord:
+  token:

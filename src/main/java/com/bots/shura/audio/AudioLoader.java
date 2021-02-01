@@ -1,7 +1,7 @@
 package com.bots.shura.audio;
 
-import com.bots.shura.db.entities.Track;
-import com.bots.shura.db.repositories.TrackRepository;
+import com.bots.shura.db.Track;
+import com.bots.shura.db.TrackRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -23,15 +23,15 @@ public class AudioLoader implements AudioLoadResultHandler {
 
     public void saveTrack(AudioTrack track, TrackOrigin trackOrigin, String playlistName) {
         if (!reloadingTracks) {
-            Track repositoryTrack = new Track();
-            repositoryTrack.setGuildId(trackScheduler.getTrackPlayer().getGuildId());
-            repositoryTrack.setName(track.getInfo().title);
-            repositoryTrack.setLink(track.getInfo().uri);
-            repositoryTrack.setPlaylistName(playlistName);
-            repositoryTrack.setOrigin(trackOrigin);
-            repositoryTrack.setTime(0);
-
-            trackRepository.save(repositoryTrack);
+            trackRepository.session(() -> {
+                Track repositoryTrack = new Track();
+                repositoryTrack.set(Track.GUILD_ID, trackScheduler.getTrackPlayer().getGuildId());
+                repositoryTrack.set(Track.NAME, track.getInfo().title);
+                repositoryTrack.set(Track.LINK, track.getInfo().uri);
+                repositoryTrack.set(Track.PLAYLIST_NAME, playlistName);
+                repositoryTrack.set(Track.ORIGIN, trackOrigin);
+                return repositoryTrack.saveIt();
+            });
         }
     }
 

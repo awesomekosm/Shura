@@ -4,8 +4,8 @@ import com.bots.shura.audio.AudioLoader;
 import com.bots.shura.audio.LavaPlayerAudioProvider;
 import com.bots.shura.audio.TrackPlayer;
 import com.bots.shura.audio.TrackScheduler;
-import com.bots.shura.db.entities.Track;
-import com.bots.shura.db.repositories.TrackRepository;
+import com.bots.shura.db.Track;
+import com.bots.shura.db.TrackRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -133,7 +133,7 @@ public class GuildMusic {
                 audioLoader.setReloadingTracks(true);
                 tracks.forEach(track -> {
                     try {
-                        audioPlayerManager.loadItem(track.getLink(), audioLoader).get();
+                        audioPlayerManager.loadItem((String) track.get(Track.LINK), audioLoader).get();
                     } catch (InterruptedException | ExecutionException e) {
                         LOGGER.error("Startup recovery failed", e);
                     }

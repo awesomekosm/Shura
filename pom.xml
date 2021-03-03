@@ -69,7 +69,7 @@
             <!-- https://github.com/sedmelluq/lavaplayer -->
             <groupId>com.sedmelluq</groupId>
             <artifactId>lavaplayer</artifactId>
-            <version>1.3.71</version>
+            <version>1.3.72</version>
         </dependency>
         <dependency>
             <!-- https://github.com/sedmelluq/jda-nas -->

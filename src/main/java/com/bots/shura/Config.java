@@ -78,11 +78,14 @@ public class Config {
     }
 
     private CommandName bestFitCommand(Map<CommandName, List<String>> commandAliases, String userInput, int threshHold) {
+        if (userInput != null && userInput.startsWith("!")) {
+            userInput = StringUtils.substring(userInput, 1, userInput.length());
+        }
         CommandName result = null;
         int currentDistance = threshHold;
         for (CommandName val : CommandName.values()) {
             for (String alias : commandAliases.get(val)) {
-                int distance = levenshteinDistance.apply('!' + alias, userInput);
+                int distance = levenshteinDistance.apply(alias, userInput);
                 if (distance < currentDistance) {
                     result = val;
                     currentDistance = distance;

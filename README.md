@@ -1,29 +1,36 @@
-# Shura
-Discord Music Bot
+<p align="center">
+    <span style="font-size: 32px">ШУРА</span><br>
+    Discord Music Bot
+</p>
 
-# Use
+<p align="center">
+  <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/shurapleer/shura">
+  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/z-emb/shura">
+</p>
 
-* Create an application @ https://discord.com/developers/applications
+### Create Discord Token
+
+* Create an application https://discord.com/developers/applications
 * In settings click Bot
 * Get client id of the application
 * Link to authorize shura in channels where you can invite
     - `https://discord.com/oauth2/authorize?client_id={YOUR_CLIENT_ID}&permissions=3222528&scope=bot`
 
-### Lazy
-* Have at least docker 18+
-* cd into docker-only-build and `./run YOUR_DISCORD_TOKEN`
-    - will build *Shura* inside docker container from latest source
-    - remove old *Shura* container if exists
-    - start docker container at that point can use invite link above
+### Running
 
-### Easy
-* Have at least jdk 11 and docker 18+
-* `./run YOUR_DISCORD_TOKEN` from shura
-    - will build latest using bundled maven
-    - remove old *Shura* container if exists
-    - start docker container at that point can use invite link above
+Use discord token from the step above.  
+Image tags corresponds to the release.  More tags can be found at [Docker Hub](https://hub.docker.com/r/shurapleer/shura)
 
-### Hard
+```
+docker run -d \
+        --name shura \
+        --env JAVA_OPTS="-Dshura.discord.token=$DISCORD_TOKEN" \
+        shurapleer/shura:1.0.0
+```
+
+### Building
+
+#### Maven Build
 * Have at least jdk 11
 * Execute `mvnw.cmd` on windows or `mvnw` on linux at the root of the directory
 * `./mvnw package`
@@ -31,41 +38,48 @@ Discord Music Bot
 * This is a self contained jar, can be executed
 * `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
 
-# Commands
+#### Maven + Docker Build
+* Have at least jdk 11 and docker 18+
+* `./run YOUR_DISCORD_TOKEN` from shura
+  - will build latest using bundled maven
+  - remove old *Shura* container if exists
+  - start docker container at that point can use invite link above
 
-## PLAY
+### Commands
+
+#### PLAY
 * Can play anything supported by https://github.com/sedmelluq/lavaplayer
 * example
 * !play https://www.youtube.com/watch?v=miomuSGoPzI
-## SUMMON
+#### SUMMON
 * calls bot to the same voice channel as the user typing in command
 * !summon
-## LEAVE
+#### LEAVE
 * disconnects from voice
-## PAUSE
-## RESUME
-## SKIP
+#### PAUSE
+#### RESUME
+#### SKIP
 * can skip a single song
 * !skip
 * or multiple
 * !skip 3
 * or a whole playlist that's queued
 * !skip pl
-## VOLUME
+#### VOLUME
 * volume goes from 0 to 1000
 * default is
 * !volume 20
 
-# Features
+### Features
 * Shura saves all of your inputs and starts where it left off incase it's turned off / crashes
 * Shura has drunk mode enabled by default in application.yml, this means you don't have to type commands exactly
 * skop pley and !summie and volum will all work as if you typed it correctly даже поймет по руский
 
-# Platforms
+### Platforms
 * Windows (x86 and x64)
 * Linux (x86 and x64, glibc >= 2.15)
 
-# Docker
+### Local Docker Build
 * Build
 `./mvnw package`
 * Create container

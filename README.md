@@ -25,7 +25,7 @@ Image tags corresponds to the release.  More tags can be found at [Docker Hub](h
 docker run -d \
         --name shura \
         --env JAVA_OPTS="-Dshura.discord.token=$DISCORD_TOKEN" \
-        shurapleer/shura:1.0.0
+        shurapleer/shura:latest
 ```
 
 ### Building
@@ -34,9 +34,9 @@ docker run -d \
 * Have at least jdk 11
 * Execute `mvnw.cmd` on windows or `mvnw` on linux at the root of the directory
 * `./mvnw package`
-* Output will be in shura/target/shura-1.0.0-SNAPSHOT.jar
+* Output will be in shura/target/shura-***.jar
 * This is a self contained jar, can be executed
-* `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-1.0.0-SNAPSHOT.jar`
+* `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-***.jar`
 
 #### Maven + Docker Build
 * Have at least jdk 11 and docker 18+

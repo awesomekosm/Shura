@@ -1,11 +1,9 @@
-<p align="center">
-    <span style="font-size: 32px">ШУРА</span><br>
-    Discord Music Bot
-</p>
+<h1 align="center">ШУРА</h1>
+<p align="center">Discord Music Bot</p>
 
 <p align="center">
-  <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/shurapleer/shura">
-  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/z-emb/shura">
+  <a href="https://hub.docker.com/r/shurapleer/shura"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/shurapleer/shura"></a>
+  <a href="https://github.com/Z-EMB/Shura/releases"><img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/z-emb/shura"></a>
 </p>
 
 ### Create Discord Token

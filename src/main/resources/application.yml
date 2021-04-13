@@ -12,6 +12,10 @@ logging.level:
   org.hibernate: ERROR
 
 shura:
+  cache:
+    enabled: true
+    updated: true
+    directory: cache
   datasource:
     url: jdbc:sqlite:shura.db
     driver: org.sqlite.JDBC

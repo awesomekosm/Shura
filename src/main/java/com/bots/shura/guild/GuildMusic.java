@@ -4,6 +4,7 @@ import com.bots.shura.audio.AudioLoader;
 import com.bots.shura.audio.LavaPlayerAudioProvider;
 import com.bots.shura.audio.TrackPlayer;
 import com.bots.shura.audio.TrackScheduler;
+import com.bots.shura.caching.Downloader;
 import com.bots.shura.db.entities.Track;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
@@ -14,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +43,12 @@ public class GuildMusic {
 
     private final TrackRepository trackRepository;
 
-    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository) {
+    private final Downloader downloader;
+
+    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, Downloader downloader) {
         this.voiceChannel = voiceChannel;
         this.trackRepository = trackRepository;
+        this.downloader = downloader;
         this.audioPlayerManager = playerManager();
         {
             // Create an AudioPlayer so Discord4J can receive audio data
@@ -96,7 +101,11 @@ public class GuildMusic {
     }
 
     public void play(String command) {
-        audioPlayerManager.loadItem(command, audioLoader);
+        if (downloader != null) {
+            checkCacheAndLoad(command);
+        } else {
+            audioPlayerManager.loadItem(command, audioLoader);
+        }
     }
 
     public void leave() {
@@ -128,6 +137,7 @@ public class GuildMusic {
         List<Track> unPlayedTracks = trackRepository.findAllByGuildId(this.voiceChannel.getGuild().getIdLong());
         Optional.of(unPlayedTracks).ifPresent(tracks -> {
             if (tracks.size() > 0) {
+                // todo substitute source with cache if exists and cache enabled
                 // prevent saving duplicates to db upon restart - probably a better way to do this without
                 // blocking on loadItem
                 audioLoader.setReloadingTracks(true);
@@ -151,5 +161,49 @@ public class GuildMusic {
     public void reconnectVoiceChannel(VoiceChannel voiceChannel) {
         connectToVoiceChannel(voiceChannel, audioProvider);
         this.voiceChannel = voiceChannel;
+    }
+
+    private void checkCacheAndLoad(String url) {
+        // check for playlist in cache
+        List<String> playlistSongPaths = downloader.getPlaylistSongs(url);
+        if (!playlistSongPaths.isEmpty()) {
+            // sync playlist, it may have new songs
+            try {
+                LOGGER.debug("Syncing playlist...");
+                downloader.playlist(url);
+                playlistSongPaths = downloader.getPlaylistSongs(url);
+            } catch (Downloader.YoutubeDLException e) {
+                LOGGER.error("Could not sync playlist to cache", e);
+            }
+            // load songs
+            LOGGER.debug("Loading playlist from cache {}", playlistSongPaths);
+            playlistSongPaths.forEach(playlistSongPath -> {
+                try {
+                    audioPlayerManager.loadItem(playlistSongPath, audioLoader).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    LOGGER.error("Blocking item loading failed", e);
+                }
+            });
+            return;
+        }
+
+        // check for single in cache
+        String singleCachedPath = downloader.getSingleSong(url);
+        if (StringUtils.isNotBlank(singleCachedPath)) {
+            LOGGER.debug("Loading single from cache {}", singleCachedPath);
+            audioPlayerManager.loadItem(singleCachedPath, audioLoader);
+            return;
+        }
+
+        // missing from cache, load from source
+        LOGGER.debug("Cache miss {}", url);
+        audioPlayerManager.loadItem(url, audioLoader);
+        // cache for next time
+        try {
+            LOGGER.debug("Cache miss, syncing {}", url);
+            downloader.playlistOrSingle(url);
+        } catch (Downloader.YoutubeDLException e) {
+            LOGGER.error("Could not cache " + url, e);
+        }
     }
 }

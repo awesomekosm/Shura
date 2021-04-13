@@ -1,5 +1,6 @@
 package com.bots.shura;
 
+import com.bots.shura.caching.Downloader;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
@@ -12,6 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,6 +27,19 @@ import java.util.Map;
 @Configuration
 public class Config {
     private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
+
+    @Bean
+    @ConditionalOnProperty(name = "shura.cache.enabled")
+    public Downloader downloader(@Value("${shura.cache.updated}") boolean updated,
+                                 @Value("${shura.cache.directory}") String cacheDirectory) throws Downloader.MissingDependencyException, Downloader.YoutubeDLException {
+        Downloader downloader =  new Downloader(cacheDirectory);
+        if (updated) {
+            LOGGER.info("Updating Downloader");
+            downloader.update();
+        }
+
+        return downloader;
+    }
 
     @Bean
     public DataSource shuraDataSource(ShuraProperties shuraProperties) {

@@ -1,5 +1,6 @@
 package com.bots.shura.commands;
 
+import com.bots.shura.caching.Downloader;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.guild.GuildMusic;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
@@ -9,6 +10,7 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -35,9 +37,13 @@ public class CommandProcessor {
     private final Map<CommandName, Command> commandMap = new HashMap<>();
 
     private final TrackRepository trackRepository;
+    private final Downloader downloader;
 
-    public CommandProcessor(TrackRepository trackRepository) {
+    public CommandProcessor(TrackRepository trackRepository,
+                            @Autowired(required = false) Downloader downloader) {
+
         this.trackRepository = trackRepository;
+        this.downloader = downloader;
 
         commandMap.put(CommandName.PLAY, new Play());
         commandMap.put(CommandName.SUMMON, new Summon());
@@ -75,7 +81,7 @@ public class CommandProcessor {
                         final GuildMusic guildMusic = guildMusicConnections.get(guildId);
                         // if not connected, connect
                         if (guildMusic == null) {
-                            guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository));
+                            guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository, downloader));
                         } else {
                             safeGuildOperation(guildId, (gm) -> gm.reconnectVoiceChannel(channel));
                         }

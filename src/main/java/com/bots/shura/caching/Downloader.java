@@ -18,6 +18,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Requires youtube-dl and ffmpeg
+ *
+ * wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
+ * chmod a+rx /usr/local/bin/youtube-dl
+ * sudo apt install python
+ * sudo apt install ffmpeg
+ *
+ */
 public class Downloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Downloader.class);
@@ -117,7 +126,7 @@ public class Downloader {
 
     //youtube-dl -o '%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s' https://www.youtube.com/channel/UCou1-tqCZ5tLKK225f9iHkg/playlists
     public String single(String url) throws YoutubeDLException {
-        return run("--download-archive", cacheDirectory + "/archive.txt",
+        return run("--download-archive", cacheDirectory + "/singles/archive.txt",
                 "--ignore-errors",
                 "--http-chunk-size", "1M",
                 "-o",
@@ -156,7 +165,7 @@ public class Downloader {
             playlist(url);
         } else {
             String singleId = getId(url, singlePattern);
-            if (singleId == null) {
+            if (singleId != null) {
                 single(url);
             }
         }

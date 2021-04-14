@@ -10,6 +10,10 @@ spring:
 logging.level:
   root: INFO
   org.hibernate: ERROR
+  com:
+    bots:
+      shura:
+        guild: DEBUG
 
 shura:
   cache:

@@ -22,6 +22,7 @@ Image tags corresponds to the release.  More tags can be found at [Docker Hub](h
 ```
 docker run -d \
         --name shura \
+        -v $(pwd)/cache:/opt/cache \
         --env JAVA_OPTS="-Dshura.discord.token=$DISCORD_TOKEN" \
         shurapleer/shura:latest
 ```
@@ -102,7 +103,7 @@ shura:
 * Create container
 `docker build --tag local/shura:latest .`
 * Run
-`docker run --name shura --env JAVA_OPTS="-Dshura.discord.token=YOUR_TOKEN" local/shura`
+`docker run --rm --name shura -v $(pwd)/cache:/opt/cache --env JAVA_OPTS="-Dshura.discord.token=YOUR_TOKEN" local/shura`
 
 # Thanks
 Great libraries that made this fun

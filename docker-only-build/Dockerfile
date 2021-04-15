@@ -16,17 +16,11 @@ FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.10_9
 
 RUN apk --no-cache upgrade && \
     apk add ffmpeg python3 && \
-    ln -sf python3 /usr/bin/python && \
-    addgroup -S appgroup && \
-    adduser -S appuser -G appgroup && \
-    chown appuser: /opt && \
-    chmod u+w /opt
+    ln -sf python3 /usr/bin/python
 
-COPY --from=builder --chown=appuser:appgroup /opt/app.jar /opt/app.jar
+COPY --from=builder /opt/app.jar /opt/app.jar
 
 WORKDIR /opt
-
-USER appuser
 
 RUN mkdir /opt/tools && \
     cd /opt/tools && \

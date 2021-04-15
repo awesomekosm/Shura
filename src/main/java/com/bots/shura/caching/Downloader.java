@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +38,9 @@ public class Downloader {
 
     private final String cacheDirectory;
 
-    public static void main(String[] args) throws MissingDependencyException, YoutubeDLException {
+    private final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+    public static void main(String[] args) throws MissingDependencyException, YoutubeDLException, ExecutionException, InterruptedException {
         Downloader downloader = new Downloader("cache");
         downloader.update();
 
@@ -51,9 +53,11 @@ public class Downloader {
         String singleSongDirectory = downloader.getSingleSong(singleUrl);
         LOGGER.info("{}", singleSongDirectory);
 
-//        downloader.playlist(songUrl);
-//        downloader.single("https://www.youtube.com/watch?v=mTKvEwdmu_w");
+//        downloader.playlist(songUrl).get();
+//        downloader.single("https://www.youtube.com/watch?v=mTKvEwdmu_w").get();
 //        downloader.channel("https://www.youtube.com/channel/UCou1-tqCZ5tLKK225f9iHkg/playlists");
+
+        downloader.shutdown();
     }
 
     public Downloader(String cacheDirectory) throws MissingDependencyException {
@@ -125,30 +129,44 @@ public class Downloader {
     }
 
     //youtube-dl -o '%(uploader)s/%(playlist)s/%(playlist_index)s - %(title)s.%(ext)s' https://www.youtube.com/channel/UCou1-tqCZ5tLKK225f9iHkg/playlists
-    public String single(String url) throws YoutubeDLException {
-        return run("--download-archive", cacheDirectory + "/singles/archive.txt",
-                "--ignore-errors",
-                "--http-chunk-size", "1M",
-                "-o",
-                cacheDirectory + "/singles/%(id)s-%(title)s.%(ext)s",
-                "-x",
-                "-f", "best",
-                "--audio-quality", "0",
-                "--audio-format", "best",
-                url);
+    public Future<String> single(String url) {
+        return singleThreadExecutor.submit(() -> {
+            try {
+                return run("--download-archive", cacheDirectory + "/singles/archive.txt",
+                        "--ignore-errors",
+                        "--http-chunk-size", "1M",
+                        "-o",
+                        cacheDirectory + "/singles/%(id)s-%(title)s.%(ext)s",
+                        "-x",
+                        "-f", "best[filesize<50M]",
+                        "--audio-quality", "0",
+                        "--audio-format", "best",
+                        url);
+            } catch (YoutubeDLException e) {
+                LOGGER.error("Downloading single failed", e);
+            }
+            return null;
+        });
     }
 
-    public String playlist(String url) throws YoutubeDLException {
-        return run("--download-archive", cacheDirectory + "/archive.txt",
-                "--ignore-errors",
-                "--http-chunk-size", "1M",
-                "-o",
-                cacheDirectory + "/%(playlist_id)s-%(playlist)s/%(id)s-%(playlist_index)s-%(title)s.%(ext)s",
-                "-x",
-                "-f", "best",
-                "--audio-quality", "0",
-                "--audio-format", "best",
-                url);
+    public Future<String> playlist(String url) throws YoutubeDLException {
+        return singleThreadExecutor.submit(() -> {
+            try {
+                return run("--download-archive", cacheDirectory + "/archive.txt",
+                        "--ignore-errors",
+                        "--http-chunk-size", "1M",
+                        "-o",
+                        cacheDirectory + "/%(playlist_id)s-%(playlist)s/%(id)s-%(playlist_index)s-%(title)s.%(ext)s",
+                        "-x",
+                        "-f", "best[filesize<50M]",
+                        "--audio-quality", "0",
+                        "--audio-format", "best",
+                        url);
+            } catch (YoutubeDLException e) {
+                LOGGER.error("Downloading single failed", e);
+            }
+            return null;
+        });
     }
 
 
@@ -156,19 +174,22 @@ public class Downloader {
      * Downloads playlist, if url is for a playlist<br>
      * If url is not playlist, attempts to download a single<br>
      * Order playlist first, single second matters since some playlists on youtube have both v= and list= query parameters
+     *
      * @param url playlist or single url
      * @throws YoutubeDLException
      */
-    public void playlistOrSingle(String url) throws YoutubeDLException {
+    public Future<String> playlistOrSingle(String url) throws YoutubeDLException {
         String playlistId = getId(url, playlistPattern);
         if (playlistId != null) {
-            playlist(url);
+            return playlist(url);
         } else {
             String singleId = getId(url, singlePattern);
             if (singleId != null) {
-                single(url);
+                return single(url);
             }
         }
+
+        throw new YoutubeDLException("Failed to identify playlist or single url: " + url);
     }
 
     public String channel(String url) throws YoutubeDLException {
@@ -210,18 +231,22 @@ public class Downloader {
         try {
             Process process = builder.start();
             String successResult = new StreamGobbler(process.getInputStream(), LOGGER::info).get();
-            new StreamGobbler(process.getErrorStream(), LOGGER::debug).get();
+            String errorResult = new StreamGobbler(process.getErrorStream(), LOGGER::info).get();
 
             process.waitFor(60, TimeUnit.SECONDS);
 
             if (process.exitValue() != 0) {
-                throw new YoutubeDLException("Unsuccessful exit code: " + process.exitValue());
+                throw new YoutubeDLException("Unsuccessful exit code: " + process.exitValue() + " " + errorResult);
             }
 
             return successResult;
         } catch (Exception ex) {
             throw new YoutubeDLException("Process call failed", ex);
         }
+    }
+
+    public void shutdown() {
+        singleThreadExecutor.shutdown();
     }
 
     public static class YoutubeDLException extends Exception {

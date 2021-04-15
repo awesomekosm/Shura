@@ -5,21 +5,14 @@ ARG JAVA_OPTS
 RUN apk --no-cache upgrade && \
     apk add ffmpeg python3 && \
     ln -sf python3 /usr/bin/python && \
-    addgroup -S appgroup && \
-    adduser -S appuser -G appgroup && \
-    chown appuser: /opt && \
-    chmod u+w /opt
-
-ADD --chown=appuser:appgroup target/shura-*.jar /opt/app.jar
-
-WORKDIR /opt
-
-USER appuser
-
-RUN mkdir /opt/tools && \
+    mkdir /opt/tools && \
     cd /opt/tools && \
     wget https://yt-dl.org/downloads/latest/youtube-dl -O ./youtube-dl && \
     chmod a+rx ./youtube-dl
+
+ADD target/shura-*.jar /opt/app.jar
+
+WORKDIR /opt
 
 ENV PATH=/opt/tools:$PATH
 

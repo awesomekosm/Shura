@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class GuildMusic {
 
@@ -170,7 +171,11 @@ public class GuildMusic {
             // sync playlist, it may have new songs
             try {
                 LOGGER.debug("Syncing playlist...");
-                downloader.playlist(url);
+                try {
+                    downloader.playlist(url).get(30, TimeUnit.SECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    LOGGER.error("Syncing playlist error", e);
+                }
                 playlistSongPaths = downloader.getPlaylistSongs(url);
             } catch (Downloader.YoutubeDLException e) {
                 LOGGER.error("Could not sync playlist to cache", e);

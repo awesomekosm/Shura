@@ -1,6 +1,7 @@
 package com.bots.shura;
 
 import com.bots.shura.caching.Downloader;
+import com.bots.shura.caching.ShutdownDownloader;
 import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +34,7 @@ public class Config {
     @ConditionalOnProperty(name = "shura.cache.enabled")
     public Downloader downloader(@Value("${shura.cache.updated}") boolean updated,
                                  @Value("${shura.cache.directory}") String cacheDirectory) throws Downloader.MissingDependencyException, Downloader.YoutubeDLException {
-        Downloader downloader =  new Downloader(cacheDirectory);
+        Downloader downloader = new Downloader(cacheDirectory);
         if (updated) {
             LOGGER.info("Updating Downloader");
             downloader.update();
@@ -42,14 +44,20 @@ public class Config {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "shura.cache.enabled")
+    public ShutdownDownloader shutdownDownloader(@Autowired Downloader downloader) {
+        return new ShutdownDownloader(downloader);
+    }
+
+    @Bean
     public DataSource shuraDataSource(ShuraProperties shuraProperties) {
         return shuraProperties.getDatasource().initializeDataSourceBuilder().build();
     }
 
     @Bean
     public JDABuilder discordClient(ShuraProperties shuraProperties,
-                             CommandProcessor commandProcessor,
-                             Map<CommandName, List<String>> commandAliases) {
+                                    CommandProcessor commandProcessor,
+                                    Map<CommandName, List<String>> commandAliases) {
 
         return JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
                 .setAudioSendFactory(new NativeAudioSendFactory())

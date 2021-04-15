@@ -25,9 +25,14 @@
             <url>https://m2.dv8tion.net/releases</url>
         </repository>
         <repository>
-            <id>central</id>
+            <id>bintray-central</id>
             <name>bintray</name>
             <url>http://jcenter.bintray.com</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2</url>
         </repository>
     </repositories>
 

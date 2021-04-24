@@ -5,6 +5,7 @@ import com.bots.shura.audio.LavaPlayerAudioProvider;
 import com.bots.shura.audio.TrackPlayer;
 import com.bots.shura.audio.TrackScheduler;
 import com.bots.shura.caching.Downloader;
+import com.bots.shura.caching.YoutubeUrlCorrection;
 import com.bots.shura.db.entities.Track;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
@@ -46,11 +47,14 @@ public class GuildMusic {
 
     private final Downloader downloader;
 
+    private final YoutubeUrlCorrection youtubeUrlCorrection;
+
     public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, Downloader downloader) {
         this.voiceChannel = voiceChannel;
         this.trackRepository = trackRepository;
         this.downloader = downloader;
         this.audioPlayerManager = playerManager();
+        this.youtubeUrlCorrection = new YoutubeUrlCorrection();
         {
             // Create an AudioPlayer so Discord4J can receive audio data
             final AudioPlayer audioPlayer = audioPlayerManager.createPlayer();
@@ -102,10 +106,11 @@ public class GuildMusic {
     }
 
     public void play(String command) {
+        String correctedUrl = youtubeUrlCorrection.correctUrl(command);
         if (downloader != null) {
-            checkCacheAndLoad(command);
+            checkCacheAndLoad(correctedUrl);
         } else {
-            audioPlayerManager.loadItem(command, audioLoader);
+            audioPlayerManager.loadItem(correctedUrl, audioLoader);
         }
     }
 

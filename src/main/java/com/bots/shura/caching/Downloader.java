@@ -20,12 +20,11 @@ import java.util.stream.Stream;
 
 /**
  * Requires youtube-dl and ffmpeg
- *
+ * <p>
  * wget https://yt-dl.org/downloads/latest/youtube-dl -O /usr/local/bin/youtube-dl
  * chmod a+rx /usr/local/bin/youtube-dl
  * sudo apt install python
  * sudo apt install ffmpeg
- *
  */
 public class Downloader {
 
@@ -42,6 +41,10 @@ public class Downloader {
 
     public static void main(String[] args) throws MissingDependencyException, YoutubeDLException, ExecutionException, InterruptedException {
         Downloader downloader = new Downloader("cache");
+        YoutubeUrlCorrection youtubeUrlCorrection = new YoutubeUrlCorrection();
+        String result = youtubeUrlCorrection.correctUrl("https://www.youtube.com/watch?v=r-29Jj3WMkc&list=PL9Ye3Lm8rWI9uwZ3dfc8UnZulzdXlN0WV&index=1");
+        result = youtubeUrlCorrection.correctUrl("https://youtu.be/watch?v=r-29Jj3WMkc&list=PL9Ye3Lm8rWI9uwZ3dfc8UnZulzdXlN0WV&index=1");
+
         downloader.update();
 
         String playlistUrl = "https://www.youtube.com/playlist?list=PL52ssDO0VaT85OxE9RMVWZpA0AnYScnV-";

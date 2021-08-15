@@ -6,7 +6,6 @@ import com.bots.shura.commands.Command;
 import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
-import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -60,7 +59,6 @@ public class Config {
                                     Map<CommandName, List<String>> commandAliases) {
 
         return JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
-                .setAudioSendFactory(new NativeAudioSendFactory())
                 .addEventListeners(new ListenerAdapter() {
                     @Override
                     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {

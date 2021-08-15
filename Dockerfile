@@ -1,4 +1,5 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.10_9
+# https://hub.docker.com/r/adoptopenjdk/openjdk11/tags?page=1&ordering=last_updated&name=x86_64-alpine-jre-11
+FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.11_9
 
 ARG JAVA_OPTS
 

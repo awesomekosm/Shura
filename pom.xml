@@ -68,7 +68,7 @@
             <!-- https://github.com/DV8FromTheWorld/JDA -->
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>4.3.0_309</version>
+            <version>4.3.0_310</version>
         </dependency>
         <dependency>
             <!-- https://github.com/sedmelluq/lavaplayer -->

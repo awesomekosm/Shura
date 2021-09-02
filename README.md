@@ -84,9 +84,6 @@ shura:
     enabled: true
     updated: true
     directory: cache
-  datasource:
-    url: jdbc:sqlite:shura.db
-    driver: org.sqlite.JDBC
   drunk-mode: true
   thresh-hold: 3
   discord:

@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Nonnull;
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +45,6 @@ public class Config {
     @ConditionalOnProperty(name = "shura.cache.enabled")
     public ShutdownDownloader shutdownDownloader(@Autowired Downloader downloader) {
         return new ShutdownDownloader(downloader);
-    }
-
-    @Bean
-    public DataSource shuraDataSource(ShuraProperties shuraProperties) {
-        return shuraProperties.getDatasource().initializeDataSourceBuilder().build();
     }
 
     @Bean

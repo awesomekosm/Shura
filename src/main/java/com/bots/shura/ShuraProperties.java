@@ -1,6 +1,5 @@
 package com.bots.shura;
 
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "shura")
 public class ShuraProperties {
 
-    private DataSourceProperties datasource;
     private boolean drunkMode;
     private int threshHold;
     private Discord discord;
@@ -25,14 +23,6 @@ public class ShuraProperties {
         public void setToken(String token) {
             this.token = token;
         }
-    }
-
-    public DataSourceProperties getDatasource() {
-        return datasource;
-    }
-
-    public void setDatasource(DataSourceProperties datasource) {
-        this.datasource = datasource;
     }
 
     public boolean isDrunkMode() {

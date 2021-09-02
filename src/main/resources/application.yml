@@ -1,11 +1,7 @@
 spring:
-  jpa:
-    generate-ddl: true
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.sqlite.hibernate.dialect.SQLiteDialect
+  datasource:
+    url: jdbc:sqlite:${shura.cache.directory}/shura.db
+    driver-class-name: org.sqlite.JDBC
 
 logging.level:
   root: INFO
@@ -20,9 +16,6 @@ shura:
     enabled: true
     updated: true
     directory: cache
-  datasource:
-    url: jdbc:sqlite:shura.db
-    driver: org.sqlite.JDBC
   drunk-mode: true
   thresh-hold: 3
   discord:

@@ -9,7 +9,8 @@ RUN apk --no-cache upgrade && \
     mkdir /opt/tools && \
     cd /opt/tools && \
     wget https://yt-dl.org/downloads/latest/youtube-dl -O ./youtube-dl && \
-    chmod a+rx ./youtube-dl
+    chmod a+rx ./youtube-dl && \
+    mkdir /opt/cache
 
 ADD target/shura-*.jar /opt/app.jar
 

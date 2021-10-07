@@ -1,5 +1,7 @@
 package com.bots.shura.caching;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,8 +11,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -35,6 +36,8 @@ public class Downloader {
 
     private final boolean isWindows;
 
+    private final ObjectMapper objectMapper;
+
     private final String cacheDirectory;
 
     private final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
@@ -48,9 +51,7 @@ public class Downloader {
         downloader.update();
 
         String playlistUrl = "https://www.youtube.com/playlist?list=PL52ssDO0VaT85OxE9RMVWZpA0AnYScnV-";
-        List<String> playlistSongDirectories = downloader.getPlaylistSongs(playlistUrl);
-
-        LOGGER.info("{}", playlistSongDirectories);
+        LOGGER.info("songs to play {}", downloader.getPlayListSongsAll(playlistUrl));
 
         String singleUrl = "https://www.youtube.com/watch?v=mTKvEwdmu_w";
         String singleSongDirectory = downloader.getSingleSong(singleUrl);
@@ -66,6 +67,7 @@ public class Downloader {
     public Downloader(String cacheDirectory) throws MissingDependencyException {
         this.cacheDirectory = StringUtils.trimToEmpty(cacheDirectory);
         this.isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        this.objectMapper = new ObjectMapper();
         try {
             run("--version");
         } catch (YoutubeDLException e) {
@@ -97,7 +99,44 @@ public class Downloader {
         return null;
     }
 
-    public List<String> getPlaylistSongs(String playlistUrl) {
+    public List<String> getPlayListSongsAll(String playlistUrl) throws YoutubeDLException, ExecutionException, InterruptedException {
+        List<String> playlistSongs = getPlaylistSongs(playlistUrl);
+        LOGGER.info("cached playlist songs {}", playlistSongs.size());
+
+        if (playlistSongs.isEmpty()) {
+            // nothing is cached
+            return List.of();
+        }
+
+        final String playListSyncJSON = playlist(playlistUrl, true).get();
+        if (playListSyncJSON == null) {
+            LOGGER.error("Failed to get playlist --dump-single-json");
+            return playlistSongs;
+        }
+        try {
+            // merge cached and newly added tracks
+            Map<String, Object> playListSync = objectMapper.readValue(playListSyncJSON, Map.class);
+            List<HashMap<String, Object>> newEntriesToSync = (List<HashMap<String, Object>>) playListSync.get("entries");
+            if (newEntriesToSync != null && !newEntriesToSync.isEmpty()) {
+                LOGGER.info("will sync {} new playlist entries",  newEntriesToSync.size());
+                newEntriesToSync.forEach(s -> {
+                    Integer playlistIndex = (Integer) s.get("playlist_index");
+                    // youtube starts count from 1
+                    playlistIndex = playlistIndex - 1;
+                    String originalUrl = (String) s.get("original_url");
+                    if (playlistIndex < playlistSongs.size()) {
+                        playlistSongs.add(playlistIndex, originalUrl);
+                    }
+                });
+            }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Can't object map --dump-single-json", e);
+        }
+
+        return playlistSongs;
+    }
+
+    private List<String> getPlaylistSongs(String playlistUrl) {
         String playlistId = getId(playlistUrl, playlistPattern);
         if (playlistId == null) {
             return List.of();
@@ -115,10 +154,10 @@ public class Downloader {
                     if (singlesNames != null) {
                         // sort numerically
                         return Arrays.stream(singlesNames).sorted((o1, o2) -> {
-                            String noIdFirst = o1.substring(12);
-                            String noIdSecond = o2.substring(12);
-                            return noIdFirst.compareTo(noIdSecond);
-                        }).collect(Collectors.toList())
+                                    String noIdFirst = o1.substring(12);
+                                    String noIdSecond = o2.substring(12);
+                                    return noIdFirst.compareTo(noIdSecond);
+                                }).collect(Collectors.toList())
                                 // prepend directory for full path - can be absolute or relative depending on cacheDirectory
                                 .stream().map(single -> Paths.get(cacheDirectory, playlistDirectory, single).toString())
                                 .collect(Collectors.toList());
@@ -152,19 +191,30 @@ public class Downloader {
         });
     }
 
-    public Future<String> playlist(String url) throws YoutubeDLException {
+    public Future<String> playlist(String url, boolean simulate, String chunkSize) {
         return singleThreadExecutor.submit(() -> {
             try {
-                return run("--download-archive", cacheDirectory + "/archive.txt",
+                List<String> ytdlArgs = new ArrayList<>(Arrays.asList(
+                        "--download-archive", cacheDirectory + "/archive.txt",
                         "--ignore-errors",
-                        "--http-chunk-size", "1M",
+                        "--http-chunk-size", chunkSize,
                         "-o",
                         cacheDirectory + "/%(playlist_id)s-%(playlist)s/%(id)s-%(playlist_index)s-%(title)s.%(ext)s",
                         "-x",
                         "-f", "best[filesize<50M]",
                         "--audio-quality", "0",
                         "--audio-format", "best",
-                        url);
+                        url
+                ));
+
+                if (simulate) {
+                    ytdlArgs.addAll(ytdlArgs.size() - 1,
+                            Arrays.asList(
+                                    "--simulate",
+                                    "--dump-single-json"
+                            ));
+                }
+                return run(ytdlArgs.toArray(new String[0]));
             } catch (YoutubeDLException e) {
                 LOGGER.error("Downloading single failed", e);
             }
@@ -172,6 +222,13 @@ public class Downloader {
         });
     }
 
+    public Future<String> playlist(String url) {
+        return playlist(url, false, "1M");
+    }
+
+    public Future<String> playlist(String url, boolean simulate) {
+        return playlist(url, simulate, "1M");
+    }
 
     /**
      * Downloads playlist, if url is for a playlist<br>
@@ -233,8 +290,8 @@ public class Downloader {
 
         try {
             Process process = builder.start();
-            String successResult = new StreamGobbler(process.getInputStream(), LOGGER::info).get();
-            String errorResult = new StreamGobbler(process.getErrorStream(), LOGGER::info).get();
+            String successResult = new StreamGobbler(process.getInputStream(), LOGGER::debug).get();
+            String errorResult = new StreamGobbler(process.getErrorStream(), LOGGER::error).get();
 
             process.waitFor(60, TimeUnit.SECONDS);
 

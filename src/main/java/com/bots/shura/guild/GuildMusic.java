@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class GuildMusic {
 
@@ -171,20 +170,17 @@ public class GuildMusic {
 
     private void checkCacheAndLoad(String url) {
         // check for playlist in cache
-        List<String> playlistSongPaths = downloader.getPlaylistSongs(url);
+        List<String> playlistSongPaths = List.of();
+        try {
+            playlistSongPaths = downloader.getPlayListSongsAll(url);
+        } catch (InterruptedException | ExecutionException | Downloader.YoutubeDLException e) {
+            LOGGER.error("Error compiling a playlist from cache", e);
+        }
         if (!playlistSongPaths.isEmpty()) {
             // sync playlist, it may have new songs
-            try {
-                LOGGER.debug("Syncing playlist...");
-                try {
-                    downloader.playlist(url).get(30, TimeUnit.SECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOGGER.error("Syncing playlist error", e);
-                }
-                playlistSongPaths = downloader.getPlaylistSongs(url);
-            } catch (Downloader.YoutubeDLException e) {
-                LOGGER.error("Could not sync playlist to cache", e);
-            }
+            LOGGER.debug("Syncing playlist...");
+            downloader.playlist(url);
+
             // load songs
             LOGGER.debug("Loading playlist from cache {}", playlistSongPaths);
             playlistSongPaths.forEach(playlistSongPath -> {

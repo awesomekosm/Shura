@@ -206,7 +206,6 @@ public class GuildMusic {
         audioPlayerManager.loadItem(url, audioLoader);
         // cache for next time
         try {
-            LOGGER.debug("Cache miss, syncing {}", url);
             downloader.playlistOrSingle(url);
         } catch (Downloader.YoutubeDLException e) {
             LOGGER.error("Could not cache " + url, e);

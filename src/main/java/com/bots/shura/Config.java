@@ -35,7 +35,7 @@ public class Config {
         Downloader downloader = new Downloader(cacheDirectory);
         if (updated) {
             LOGGER.info("Updating Downloader");
-            downloader.update();
+            LOGGER.info("{}", downloader.update());
         }
 
         return downloader;

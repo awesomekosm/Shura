@@ -216,7 +216,7 @@ public class Downloader {
                 }
                 return run(ytdlArgs.toArray(new String[0]));
             } catch (YoutubeDLException e) {
-                LOGGER.error("Downloading single failed", e);
+                LOGGER.error("Downloading playlist failed. simulated: " + simulate , e);
             }
             return null;
         });

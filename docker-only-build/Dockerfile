@@ -1,4 +1,5 @@
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jdk-11.0.10_9 AS builder
+# https://hub.docker.com/r/azul/zulu-openjdk-alpine/tags?page=1&name=17.0.1-17.30.15
+FROM azul/zulu-openjdk-alpine:17.0.1-17.30.15 AS builder
 
 ARG JAVA_OPTS
 
@@ -12,7 +13,8 @@ RUN apk --no-cache upgrade && \
     cp /opt/Shura/target/shura-*.jar /opt/app.jar && \
     rm -rf /opt/shura-source
 
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.10_9
+# https://hub.docker.com/r/azul/zulu-openjdk-alpine/tags?page=1&name=17.0.1-17.30.15-jre-headless
+FROM azul/zulu-openjdk-alpine:17.0.1-17.30.15-jre-headless
 
 RUN apk --no-cache upgrade && \
     apk add ffmpeg python3 && \
@@ -24,7 +26,7 @@ WORKDIR /opt
 
 RUN mkdir /opt/tools && \
     cd /opt/tools && \
-    wget https://yt-dl.org/downloads/latest/youtube-dl -O ./youtube-dl && \
+    wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O ./youtube-dl && \
     chmod a+rx ./youtube-dl
 
 ENV PATH=/opt/tools:$PATH

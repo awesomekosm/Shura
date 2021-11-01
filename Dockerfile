@@ -1,5 +1,5 @@
-# https://hub.docker.com/r/adoptopenjdk/openjdk11/tags?page=1&ordering=last_updated&name=x86_64-alpine-jre-11
-FROM adoptopenjdk/openjdk11:x86_64-alpine-jre-11.0.12_7
+# https://hub.docker.com/r/azul/zulu-openjdk-alpine/tags?page=1&name=17.0.1-17.30.15-jre-headless
+FROM azul/zulu-openjdk-alpine:17.0.1-17.30.15-jre-headless
 
 ARG JAVA_OPTS
 

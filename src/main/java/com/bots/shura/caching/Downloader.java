@@ -31,8 +31,8 @@ public class Downloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Downloader.class);
 
-    private static final Pattern singlePattern = Pattern.compile("^*?(?<v>[a-zA-Z0-9_-]{11})$");
-    private static final Pattern playlistPattern = Pattern.compile("^*?(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)$");
+    private static final Pattern singlePattern = Pattern.compile("^.*?\\?v=([a-zA-Z0-9_-]{11})$");
+    private static final Pattern playlistPattern = Pattern.compile("^.*?\\?list=((PL|LL|FL|UU)[a-zA-Z0-9_-]+)$");
 
     private final boolean isWindows;
 
@@ -77,8 +77,8 @@ public class Downloader {
 
     private String getId(String url, Pattern pattern) {
         Matcher matcher = pattern.matcher(url);
-        if (matcher.find()) {
-            return matcher.group(0);
+        if (matcher.find() && matcher.groupCount() == 2) {
+            return matcher.group(1);
         }
 
         return null;
@@ -111,7 +111,7 @@ public class Downloader {
         final String playListSyncJSON = playlist(playlistUrl, true).get();
         if (playListSyncJSON == null) {
             LOGGER.error("Failed to get playlist --dump-single-json");
-            return playlistSongs;
+            throw new YoutubeDLException("Failed to load playlist " + playlistUrl + " from youtube");
         }
         try {
             // merge cached and newly added tracks
@@ -290,7 +290,7 @@ public class Downloader {
 
         try {
             Process process = builder.start();
-            String successResult = new StreamGobbler(process.getInputStream(), LOGGER::debug).get();
+            String successResult = new StreamGobbler(process.getInputStream(), LOGGER::info).get();
             String errorResult = new StreamGobbler(process.getErrorStream(), LOGGER::error).get();
 
             process.waitFor(60, TimeUnit.SECONDS);

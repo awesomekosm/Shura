@@ -3,6 +3,7 @@ package com.bots.shura.caching;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,12 +11,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,8 +31,10 @@ public class Downloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Downloader.class);
 
-    private static final Pattern singlePattern = Pattern.compile("^.*?\\?v=([a-zA-Z0-9_-]{11})$");
-    private static final Pattern playlistPattern = Pattern.compile("^.*?\\?list=((PL|LL|FL|UU)[a-zA-Z0-9_-]+)$");
+    enum UrlType {
+        SINGLE,
+        PLAYLIST
+    }
 
     private final boolean isWindows;
 
@@ -75,17 +77,39 @@ public class Downloader {
         }
     }
 
-    private String getId(String url, Pattern pattern) {
-        Matcher matcher = pattern.matcher(url);
-        if (matcher.find() && matcher.groupCount() == 2) {
-            return matcher.group(1);
+    private String getId(String url, UrlType urlType) {
+        try {
+            URIBuilder uriBuilder = new URIBuilder(url);
+            for (var queryParamNaveValue : uriBuilder.getQueryParams()) {
+                switch (urlType) {
+                    case SINGLE: {
+                        if (queryParamNaveValue.getName().equals("v")) {
+                            String singleId = queryParamNaveValue.getValue();
+                            if (StringUtils.isNotBlank(singleId)) {
+                                return singleId;
+                            }
+                        }
+                    }
+                    break;
+                    case PLAYLIST: {
+                        if (queryParamNaveValue.getName().equals("list")) {
+                            String playlistId = queryParamNaveValue.getValue();
+                            if (StringUtils.isNotBlank(playlistId)) {
+                                return playlistId;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        } catch (URISyntaxException e) {
+            LOGGER.error("Failed to get id of {} as {}", url, urlType.name());
         }
-
         return null;
     }
 
     public String getSingleSong(String singleUrl) {
-        String singleId = getId(singleUrl, singlePattern);
+        String singleId = getId(singleUrl, UrlType.SINGLE);
         if (singleId == null) {
             return null;
         }
@@ -118,7 +142,7 @@ public class Downloader {
             Map<String, Object> playListSync = objectMapper.readValue(playListSyncJSON, Map.class);
             List<HashMap<String, Object>> newEntriesToSync = (List<HashMap<String, Object>>) playListSync.get("entries");
             if (newEntriesToSync != null && !newEntriesToSync.isEmpty()) {
-                LOGGER.info("will sync {} new playlist entries",  newEntriesToSync.size());
+                LOGGER.info("will sync {} new playlist entries", newEntriesToSync.size());
                 newEntriesToSync.forEach(s -> {
                     Integer playlistIndex = (Integer) s.get("playlist_index");
                     // youtube starts count from 1
@@ -137,7 +161,7 @@ public class Downloader {
     }
 
     private List<String> getPlaylistSongs(String playlistUrl) {
-        String playlistId = getId(playlistUrl, playlistPattern);
+        String playlistId = getId(playlistUrl, UrlType.PLAYLIST);
         if (playlistId == null) {
             return List.of();
         }
@@ -216,7 +240,7 @@ public class Downloader {
                 }
                 return run(ytdlArgs.toArray(new String[0]));
             } catch (YoutubeDLException e) {
-                LOGGER.error("Downloading playlist failed. simulated: " + simulate , e);
+                LOGGER.error("Downloading playlist failed. simulated: " + simulate, e);
             }
             return null;
         });
@@ -239,11 +263,11 @@ public class Downloader {
      * @throws YoutubeDLException
      */
     public Future<String> playlistOrSingle(String url) throws YoutubeDLException {
-        String playlistId = getId(url, playlistPattern);
+        String playlistId = getId(url, UrlType.PLAYLIST);
         if (playlistId != null) {
             return playlist(url);
         } else {
-            String singleId = getId(url, singlePattern);
+            String singleId = getId(url, UrlType.SINGLE);
             if (singleId != null) {
                 return single(url);
             }

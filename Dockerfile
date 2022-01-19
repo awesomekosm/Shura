@@ -1,6 +1,6 @@
 # https://hub.docker.com/_/eclipse-temurin/?tab=tags&page=1&name=17-jdk-alpine
 # Custom Java runtime using jlink in a multi-stage container build
-FROM eclipse-temurin:17-jdk-alpine@sha256:b30fa3ce4323ce037cb95fd2729dd4662d86f0ee2986452527cc645eaf258a1d as jre-build
+FROM eclipse-temurin:17-jdk-alpine@sha256:9ae87d9dc6defd8f3b688d317f3bcb0ece6a2abb79e85dfce519e11ea2108fd8 as jre-build
 
 # Create a custom Java runtime and patchelf with glibc to replace musl
 RUN apk --no-cache upgrade && \

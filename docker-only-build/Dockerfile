@@ -1,5 +1,5 @@
-# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=17.0.1-17.30.15
-FROM azul/zulu-openjdk-debian:17.0.1-17.30.15@sha256:5ced0dd472bf018830424b1661738eeca49a8a26240fef2cc69f00ad77257199 AS builder
+# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=17.0.2-17.32.13
+FROM azul/zulu-openjdk-debian:17.0.2-17.32.13@sha256:6297de931b679f638aa17e861ccf8c07f845c25a99839aa5ab1730e80b635196 AS builder
 
 ARG JAVA_OPTS
 
@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     cp /opt/Shura/target/shura-*.jar /opt/app.jar && \
     rm -rf /opt/shura-source
 
-# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=17.0.1-17.30.15-jre-headless
-FROM azul/zulu-openjdk-debian:17.0.1-17.30.15-jre-headless@sha256:b28aaf77069a184dbbfdc82043bc13ab4f69f54bc351e677bc371b4a139568ab
+# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=17.0.2-17.32.13-jre-headless
+FROM azul/zulu-openjdk-debian:17.0.2-17.32.13-jre-headless@sha256:1682c3da06c4d2eddb595949a36568540f495e9bf7dbf4c6ac1cc9b660e88878
 
 RUN apt-get update && apt-get install -y \
     ffmpeg python3 wget && \

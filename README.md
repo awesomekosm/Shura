@@ -71,7 +71,7 @@ docker run -d \
 
 ### Features
 * Shura saves all of your inputs and starts where it left off incase it's turned off / crashes
-* Songs and playlists from YT are cached on disk. Requires `youtube-dl` and `ffmpeg` on the path.
+* Songs and playlists from YT are cached on disk. Requires `youtube-dl` or `yt-dlp` and `ffmpeg` on the path.
 * Shura has drunk mode enabled by default in application.yml, this means you don't have to type commands exactly
 * skop pley and !summie and volum will all work as if you typed it correctly даже поймет по руский
 

@@ -1,6 +1,6 @@
 # https://hub.docker.com/_/eclipse-temurin/?tab=tags&page=1&name=17-jdk-alpine
 # Custom Java runtime using jlink in a multi-stage container build
-FROM eclipse-temurin:17-jdk-alpine@sha256:01383f98981b47425651fe33d8c703739984f7c6b28dbc3285fa0dd080c8f9bf as jre-build
+FROM eclipse-temurin:17-jdk-alpine@sha256:8c1cea92d1928e0e068cd3b861fba4c0f5ee164a0490401d6bb3186329496401 as jre-build
 
 # Create a custom Java runtime and patchelf with glibc to replace musl
 RUN apk --no-cache upgrade && \
@@ -25,7 +25,7 @@ ADD target/shura-*.jar /javaruntime/app.jar
 
 # https://hub.docker.com/_/alpine?tab=tags&page=1&name=3.15.0
 # Define your base image
-FROM alpine:3.15.0@sha256:e7d88de73db3d3fd9b2d63aa7f447a10fd0220b7cbf39803c803f2af9ba256b3
+FROM alpine:3.15.3@sha256:1e014f84205d569a5cc3be4e108ca614055f7e21d11928946113ab3f36054801
 
 ARG JAVA_OPTS
 

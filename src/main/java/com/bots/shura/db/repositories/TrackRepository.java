@@ -2,6 +2,7 @@ package com.bots.shura.db.repositories;
 
 import com.bots.shura.audio.TrackOrigin;
 import com.bots.shura.db.entities.Track;
+import com.bots.shura.db.entities.TrackPlayStatus;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -21,15 +22,15 @@ public class TrackRepository {
         this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
-    public List<Track> findAllByGuildId(long guildId) {
-        final String sql = "select * from track where guild_id = :guildId";
+    public List<Track> findAllQueuedOrPlayingOrPausedByGuildId(long guildId) {
+        final String sql = "select * from track where guild_id = :guildId and (play_status = 0 or play_status = 2 or play_status = 3) order by id";
         final Map<String, ?> map = Map.of("guildId", guildId);
 
         return namedParameterJdbcTemplate.query(sql, map, new TrackRowMapper());
     }
 
-    public List<Track> findAllByNameAndGuildId(String name, long guildId) {
-        final String sql = "select * from track where guild_id = :guildId and name = :name";
+    public List<Track> findAllNotSkippedOrFinishedByNameAndGuildId(String name, long guildId) {
+        final String sql = "select * from track where guild_id = :guildId and name = :name and not (play_status = 1 or play_status = 4) order by id";
         final Map<String, ?> map = Map.of(
                 "name", name,
                 "guildId", guildId
@@ -39,21 +40,26 @@ public class TrackRepository {
     }
 
     public boolean save(Track track) {
-        final String sql = "insert into track (guild_id, link, name, origin, playlist_name, time) values (:guildId, :link, :name, :origin, :playlistName, :time);";
+        final String sql = "insert into track (guild_id, link, name, origin, playlist_name, time, play_status) values (:guildId, :link, :name, :origin, :playlistName, :time, :playStatus);";
         final Map<String, ?> map = Map.of(
                 "guildId", track.getGuildId(),
                 "link", track.getLink(),
                 "name", track.getName(),
                 "origin", track.getOrigin(),
                 "playlistName", track.getPlaylistName(),
-                "time", track.getTime()
+                "time", track.getTime(),
+                "playStatus", track.getPlayStatus().status()
         );
 
         return namedParameterJdbcTemplate.update(sql, map) == 1;
     }
 
-    public boolean delete(Track track) {
-        return namedParameterJdbcTemplate.update("delete from track where id = :trackId", Map.of("trackId", track.getId())) > 0;
+    public boolean updateTrackStatus(Track track, TrackPlayStatus trackPlayStatus) {
+        track.setPlayStatus(trackPlayStatus);
+        return namedParameterJdbcTemplate.update("update track set play_status = :playStatus where id = :trackId;",
+                Map.of("playStatus", trackPlayStatus.status(),
+                        "trackId", track.getId())
+        ) > 0;
     }
 
     public static class TrackRowMapper implements RowMapper<Track> {
@@ -68,6 +74,7 @@ public class TrackRepository {
             track.setPlaylistName(resultSet.getString("playlist_name"));
             track.setOrigin(TrackOrigin.valueOf(resultSet.getString("origin")));
             track.setTime(resultSet.getShort("time"));
+            track.setPlayStatus(TrackPlayStatus.values()[resultSet.getShort("play_status")]);
 
             return track;
         }

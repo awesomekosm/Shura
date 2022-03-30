@@ -1,9 +1,6 @@
 package com.bots.shura.guild;
 
-import com.bots.shura.audio.AudioLoader;
-import com.bots.shura.audio.LavaPlayerAudioProvider;
-import com.bots.shura.audio.TrackPlayer;
-import com.bots.shura.audio.TrackScheduler;
+import com.bots.shura.audio.*;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.YoutubeUrlCorrection;
 import com.bots.shura.db.entities.Track;
@@ -21,6 +18,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -139,13 +137,37 @@ public class GuildMusic {
 
     public void recoverOnStartup() {
         // check if player didn't finish playing tracks from previous shutdown/crash
-        List<Track> unPlayedTracks = trackRepository.findAllByGuildId(this.voiceChannel.getGuild().getIdLong());
+        List<Track> unPlayedTracks = trackRepository.findAllQueuedOrPlayingOrPausedByGuildId(this.voiceChannel.getGuild().getIdLong());
         Optional.of(unPlayedTracks).ifPresent(tracks -> {
             if (tracks.size() > 0) {
                 // todo substitute source with cache if exists and cache enabled
                 // prevent saving duplicates to db upon restart - probably a better way to do this without
                 // blocking on loadItem
                 audioLoader.setReloadingTracks(true);
+                List<Downloader.TrackEntry> playlistEntries = new ArrayList<>();
+
+                for (Track t : unPlayedTracks) {
+                    if (t.getOrigin() == TrackOrigin.PLAYLIST) {
+                        Downloader.TrackEntry trackEntry = new Downloader.TrackEntry();
+                        trackEntry.uri = t.getLink();
+                        trackEntry.playlistId = null;
+                        trackEntry.playlistName = t.getPlaylistName();
+                        trackEntry.id = null;
+                        trackEntry.playlistIndex = null;
+                        trackEntry.title = t.getName();
+
+                        playlistEntries.add(trackEntry);
+                    } else {
+                        Downloader.TrackEntry trackEntry = new Downloader.TrackEntry();
+                        trackEntry.uri = t.getLink();
+                        trackEntry.playlistName = "";
+                        trackEntry.title = t.getName();
+
+                        playlistEntries.add(trackEntry);
+                    }
+                }
+
+                audioLoader.setCachedEntriesToLoad(playlistEntries);
                 tracks.forEach(track -> {
                     try {
                         audioPlayerManager.loadItem(track.getLink(), audioLoader).get();
@@ -153,6 +175,7 @@ public class GuildMusic {
                         LOGGER.error("Startup recovery failed", e);
                     }
                 });
+                audioLoader.setCachedEntriesToLoad(null);
                 audioLoader.setReloadingTracks(false);
             }
         });
@@ -170,34 +193,43 @@ public class GuildMusic {
 
     private void checkCacheAndLoad(String url) {
         // check for playlist in cache
-        List<String> playlistSongPaths = List.of();
+        List<Downloader.TrackEntry> playlistEntries = List.of();
         try {
-            playlistSongPaths = downloader.getPlayListSongsAll(url);
+            playlistEntries = downloader.getPlayListSongsAll(url);
         } catch (InterruptedException | ExecutionException | Downloader.YoutubeDLException e) {
             LOGGER.error("Error compiling a playlist from cache", e);
         }
-        if (!playlistSongPaths.isEmpty()) {
+        if (!playlistEntries.isEmpty()) {
             // sync playlist, it may have new songs
             LOGGER.debug("Syncing playlist...");
             downloader.playlist(url);
 
             // load songs
-            LOGGER.debug("Loading playlist from cache {}", playlistSongPaths);
-            playlistSongPaths.forEach(playlistSongPath -> {
+            LOGGER.debug("Loading playlist from cache {}", playlistEntries);
+            audioLoader.setCachedEntriesToLoad(playlistEntries);
+            playlistEntries.forEach(playlistSongPath -> {
                 try {
-                    audioPlayerManager.loadItem(playlistSongPath, audioLoader).get();
+                    audioPlayerManager.loadItem(playlistSongPath.uri, audioLoader).get();
                 } catch (InterruptedException | ExecutionException e) {
                     LOGGER.error("Blocking item loading failed", e);
                 }
             });
+            audioLoader.setCachedEntriesToLoad(null);
+            LOGGER.debug("Loading playlist from cache finished");
             return;
         }
 
         // check for single in cache
-        String singleCachedPath = downloader.getSingleSong(url);
-        if (StringUtils.isNotBlank(singleCachedPath)) {
-            LOGGER.debug("Loading single from cache {}", singleCachedPath);
-            audioPlayerManager.loadItem(singleCachedPath, audioLoader);
+        Downloader.TrackEntry singleEntry = downloader.getSingleSong(url);
+        if (singleEntry != null) {
+            LOGGER.debug("Loading single from cache {}", singleEntry.uri);
+            audioLoader.setCachedEntriesToLoad(List.of(singleEntry));
+            try {
+                audioPlayerManager.loadItem(singleEntry.uri, audioLoader).get();
+            } catch (InterruptedException | ExecutionException e) {
+                LOGGER.error("Blocking item loading failed", e);
+            }
+            audioLoader.setCachedEntriesToLoad(null);
             return;
         }
 

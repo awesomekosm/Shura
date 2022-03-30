@@ -56,7 +56,7 @@ public class Downloader {
         LOGGER.info("songs to play {}", downloader.getPlayListSongsAll(playlistUrl));
 
         String singleUrl = "https://www.youtube.com/watch?v=mTKvEwdmu_w";
-        String singleSongDirectory = downloader.getSingleSong(singleUrl);
+        TrackEntry singleSongDirectory = downloader.getSingleSong(singleUrl);
         LOGGER.info("{}", singleSongDirectory);
 
 //        downloader.playlist(songUrl).get();
@@ -108,7 +108,7 @@ public class Downloader {
         return null;
     }
 
-    public String getSingleSong(String singleUrl) {
+    public TrackEntry getSingleSong(String singleUrl) {
         String singleId = getId(singleUrl, UrlType.SINGLE);
         if (singleId == null) {
             return null;
@@ -117,14 +117,14 @@ public class Downloader {
         File directoryPath = Paths.get(cacheDirectory, "singles").toFile();
         File[] singles = directoryPath.listFiles((dir, name) -> name.startsWith(singleId));
         if (singles != null && singles.length == 1) {
-            return singles[0].getPath();
+            return getSingleTrackEntry(singles[0].getPath());
         }
 
         return null;
     }
 
-    public List<String> getPlayListSongsAll(String playlistUrl) throws YoutubeDLException, ExecutionException, InterruptedException {
-        List<String> playlistSongs = getPlaylistSongs(playlistUrl);
+    public List<TrackEntry> getPlayListSongsAll(String playlistUrl) throws YoutubeDLException, ExecutionException, InterruptedException {
+        List<TrackEntry> playlistSongs = getPlaylistSongs(playlistUrl);
         LOGGER.info("cached playlist songs {}", playlistSongs.size());
 
         if (playlistSongs.isEmpty()) {
@@ -148,8 +148,16 @@ public class Downloader {
                     // youtube starts count from 1
                     playlistIndex = playlistIndex - 1;
                     String originalUrl = (String) s.get("original_url");
+
+                    TrackEntry newTrackEntry = new TrackEntry();
+                    newTrackEntry.uri = originalUrl;
+                    newTrackEntry.playlistId = (String) s.get("playlist_id");
+                    newTrackEntry.playlistName = (String) s.get("playlist");
+                    newTrackEntry.id = (String) s.get("display_id");
+                    newTrackEntry.playlistIndex = playlistIndex.toString();
+                    newTrackEntry.title = (String) s.get("fulltitle");
                     if (playlistIndex < playlistSongs.size()) {
-                        playlistSongs.add(playlistIndex, originalUrl);
+                        playlistSongs.add(playlistIndex, newTrackEntry);
                     }
                 });
             }
@@ -160,7 +168,57 @@ public class Downloader {
         return playlistSongs;
     }
 
-    private List<String> getPlaylistSongs(String playlistUrl) {
+    public static class TrackEntry {
+        public String uri;
+        public String playlistId;
+        public String playlistName;
+        public String id;
+        public String playlistIndex;
+        public String title;
+    }
+
+    private TrackEntry getSingleTrackEntry(String singleUri) {
+        TrackEntry trackEntry = new TrackEntry();
+        trackEntry.uri = singleUri;
+        String path = StringUtils.substringAfter(singleUri, cacheDirectory + "/");
+        int singlesFolderNameLength = "singles".length();
+        trackEntry.id = path.substring(singlesFolderNameLength + 1).substring(0, 11);
+        trackEntry.title = path.substring(singlesFolderNameLength + 1 + trackEntry.id.length() + 1);
+
+        return trackEntry;
+    }
+
+    private List<TrackEntry> getPlaylistTrackEntries(List<String> playlistSongUris) {
+        List<TrackEntry> result = new ArrayList<>();
+        for (String playlistSongUri : playlistSongUris) {
+            try {
+                if (playlistSongUri.contains(".part")) {
+                    continue;
+                }
+                TrackEntry trackEntry = new TrackEntry();
+
+                trackEntry.uri = playlistSongUri;
+                String path = StringUtils.substringAfter(playlistSongUri, cacheDirectory + "/");
+                int defaultPlaylistQueryLength = 34;
+                if (StringUtils.substring(path, 0, 19).endsWith("-")) {
+                    defaultPlaylistQueryLength = 18;
+                }
+                trackEntry.playlistId = path.substring(0, defaultPlaylistQueryLength);
+                int defaultPlaylistQueryLengthPlusOne = defaultPlaylistQueryLength + 1;
+                trackEntry.playlistName = StringUtils.substringBefore(path.substring(defaultPlaylistQueryLengthPlusOne), "/");
+                trackEntry.id = path.substring(defaultPlaylistQueryLengthPlusOne + trackEntry.playlistName.length() + 1).substring(0, 11);
+                trackEntry.playlistIndex = StringUtils.substringBefore(path.substring(defaultPlaylistQueryLengthPlusOne + trackEntry.playlistName.length() + 1).substring(12), "-");
+                trackEntry.title = path.substring(defaultPlaylistQueryLengthPlusOne + trackEntry.playlistName.length() + 1).substring(12 + trackEntry.playlistIndex.length() + 1);
+
+                result.add(trackEntry);
+            } catch (Exception ex) {
+                LOGGER.error("song uri parsing error", ex);
+            }
+        }
+        return result;
+    }
+
+    private List<TrackEntry> getPlaylistSongs(String playlistUrl) {
         String playlistId = getId(playlistUrl, UrlType.PLAYLIST);
         if (playlistId == null) {
             return List.of();
@@ -177,7 +235,7 @@ public class Downloader {
 
                     if (singlesNames != null) {
                         // sort numerically
-                        return Arrays.stream(singlesNames).sorted((o1, o2) -> {
+                        var playlistSongUris = Arrays.stream(singlesNames).sorted((o1, o2) -> {
                                     String noIdFirst = o1.substring(12);
                                     String noIdSecond = o2.substring(12);
                                     return noIdFirst.compareTo(noIdSecond);
@@ -185,6 +243,8 @@ public class Downloader {
                                 // prepend directory for full path - can be absolute or relative depending on cacheDirectory
                                 .stream().map(single -> Paths.get(cacheDirectory, playlistDirectory, single).toString())
                                 .collect(Collectors.toList());
+
+                        return getPlaylistTrackEntries(playlistSongUris);
                     }
                     break;
                 }

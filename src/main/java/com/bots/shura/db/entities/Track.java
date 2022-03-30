@@ -10,6 +10,7 @@ public class Track {
     private String playlistName;
     private TrackOrigin origin;
     private int time;
+    private TrackPlayStatus playStatus = TrackPlayStatus.QUEUED;
 
     public Long getId() {
         return id;
@@ -65,5 +66,13 @@ public class Track {
 
     public void setTime(int time) {
         this.time = time;
+    }
+
+    public TrackPlayStatus getPlayStatus() {
+        return playStatus;
+    }
+
+    public void setPlayStatus(TrackPlayStatus playStatus) {
+        this.playStatus = playStatus;
     }
 }

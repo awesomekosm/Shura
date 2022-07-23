@@ -161,7 +161,7 @@ public class Downloader {
                     }
                 });
             }
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException | NullPointerException e) {
             LOGGER.error("Can't object map --dump-single-json", e);
         }
 

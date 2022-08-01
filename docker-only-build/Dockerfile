@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/* && \
     git --version && \
     cd /opt && \
-    git clone https://github.com/Z-EMB/Shura.git && \
+    git clone https://github.com/awesomekosm/Shura.git && \
     cd Shura && \
     ./mvnw package && \
     cp /opt/Shura/target/shura-*.jar /opt/app.jar && \

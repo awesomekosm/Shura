@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://hub.docker.com/r/shurapleer/shura"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/shurapleer/shura"></a>
-  <a href="https://github.com/Z-EMB/Shura/releases"><img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/z-emb/shura"></a>
+  <a href="https://github.com/awesomekosm/Shura/releases"><img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/awesomekosm/shura"></a>
 </p>
 
 ### Create Discord Token

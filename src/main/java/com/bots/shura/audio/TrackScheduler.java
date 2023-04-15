@@ -90,7 +90,7 @@ public class TrackScheduler extends AudioEventAdapter {
         currentTrack = trackQueue.remove();
 
         var title = currentTrack.getTitle();
-        LOGGER.info("Player was resumed on {}", title);
+        LOGGER.info("Player was started on {}", title);
         updateTrackByName(title, TrackPlayStatus.PLAYING);
 
         playing = true;

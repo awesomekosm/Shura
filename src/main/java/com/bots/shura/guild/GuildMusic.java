@@ -5,6 +5,8 @@ import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.YoutubeUrlCorrection;
 import com.bots.shura.db.entities.Track;
 import com.bots.shura.db.repositories.TrackRepository;
+import com.bots.shura.shurapleer.Shurapleer;
+import com.bots.shura.shurapleer.ShurapleerClient;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -46,7 +48,9 @@ public class GuildMusic {
 
     private final YoutubeUrlCorrection youtubeUrlCorrection;
 
-    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, Downloader downloader) {
+    private Shurapleer shurapleer;
+
+    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, Downloader downloader, ShurapleerClient shurapleerClient) {
         this.voiceChannel = voiceChannel;
         this.trackRepository = trackRepository;
         this.downloader = downloader;
@@ -66,6 +70,10 @@ public class GuildMusic {
 
             this.audioLoader = new AudioLoader(trackScheduler, trackRepository);
             this.audioProvider = new LavaPlayerAudioProvider(audioPlayer);
+
+            if (shurapleerClient != null) {
+                this.shurapleer = new Shurapleer(shurapleerClient, audioPlayerManager, audioLoader);
+            }
         }
 
         connectToVoiceChannel(voiceChannel, audioProvider);
@@ -103,11 +111,15 @@ public class GuildMusic {
     }
 
     public void play(String command) {
-        String correctedUrl = youtubeUrlCorrection.correctUrl(command);
-        if (downloader != null) {
-            checkCacheAndLoad(correctedUrl);
+        if (shurapleer != null && StringUtils.contains(command, "shurapleer")) {
+            shurapleer.loadTracks(command);
         } else {
-            audioPlayerManager.loadItem(correctedUrl, audioLoader);
+            String correctedUrl = youtubeUrlCorrection.correctUrl(command);
+            if (downloader != null) {
+                checkCacheAndLoad(correctedUrl);
+            } else {
+                audioPlayerManager.loadItem(correctedUrl, audioLoader);
+            }
         }
     }
 

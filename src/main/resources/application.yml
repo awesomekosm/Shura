@@ -18,5 +18,16 @@ shura:
     directory: cache
   drunk-mode: true
   thresh-hold: 3
+  shurapleer:
+    enabled: false
+    url:
+    authentication:
+      token-uri:
+      client-id:
+      client-secret:
+      authorization-grant-type:
+      scope:
+      resource:
+      jwk-uri:
   discord:
     token:

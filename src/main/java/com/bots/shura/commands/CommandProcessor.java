@@ -3,6 +3,7 @@ package com.bots.shura.commands;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.guild.GuildMusic;
+import com.bots.shura.shurapleer.ShurapleerClient;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.VoiceChannel;
@@ -39,11 +40,15 @@ public class CommandProcessor {
     private final TrackRepository trackRepository;
     private final Downloader downloader;
 
+    private final ShurapleerClient shurapleerClient;
+
     public CommandProcessor(TrackRepository trackRepository,
+                            @Autowired(required = false) ShurapleerClient shurapleerClient,
                             @Autowired(required = false) Downloader downloader) {
 
         this.trackRepository = trackRepository;
         this.downloader = downloader;
+        this.shurapleerClient = shurapleerClient;
 
         commandMap.put(CommandName.PLAY, new Play());
         commandMap.put(CommandName.SUMMON, new Summon());
@@ -81,7 +86,7 @@ public class CommandProcessor {
                         final GuildMusic guildMusic = guildMusicConnections.get(guildId);
                         // if not connected, connect
                         if (guildMusic == null) {
-                            guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository, downloader));
+                            guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository, downloader, shurapleerClient));
                         } else {
                             safeGuildOperation(guildId, (gm) -> gm.reconnectVoiceChannel(channel));
                         }

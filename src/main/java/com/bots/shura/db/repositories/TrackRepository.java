@@ -6,7 +6,6 @@ import com.bots.shura.db.entities.TrackPlayStatus;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
@@ -40,7 +39,6 @@ public class TrackRepository {
         return namedParameterJdbcTemplate.query(sql, map, new TrackRowMapper());
     }
 
-    @Transactional
     public boolean save(Track track) {
         final String sql = "insert into track (guild_id, link, name, origin, playlist_name, time, play_status) values (:guildId, :link, :name, :origin, :playlistName, :time, :playStatus);";
         final Map<String, ?> map = Map.of(
@@ -56,7 +54,6 @@ public class TrackRepository {
         return namedParameterJdbcTemplate.update(sql, map) == 1;
     }
 
-    @Transactional
     public boolean updateTrackStatus(Track track, TrackPlayStatus trackPlayStatus) {
         track.setPlayStatus(trackPlayStatus);
         return namedParameterJdbcTemplate.update("update track set play_status = :playStatus where id = :trackId;",

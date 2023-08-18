@@ -14,7 +14,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven'
       - name: Update version in pom.xml with tag
         run: mvn --batch-mode versions:set -DnewVersion=${{ github.event.release.tag_name }} -DgenerateBackupPoms=false
       - name: Build with Maven

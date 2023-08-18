@@ -104,5 +104,5 @@ shura:
 
 # Thanks
 Great libraries that made this fun
-* https://github.com/Walkyst/lavaplayer-fork
+* https://github.com/lavalink-devs/lavaplayer
 * https://github.com/DV8FromTheWorld/JDA

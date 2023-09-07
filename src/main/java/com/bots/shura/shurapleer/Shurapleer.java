@@ -35,25 +35,45 @@ public class Shurapleer {
         UriComponents uriComponents = uriBuilder.build();
 
         if (isPlaylist) {
-            String playlistId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
+            boolean mediaInPlaylist = StringUtils.contains(url, "media");
+            String playlistId;
+            String mediaId = null;
+            if (mediaInPlaylist) {
+                playlistId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 3);
+                mediaId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
+            } else {
+                playlistId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
+            }
 
-            List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getPlaylistMediaLocations(playlistId);
+            List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getPlaylistMediaLocations(playlistId, mediaId);
 
             for (var ml : mediaLocations) {
-                try {
-                    if (Path.of(ml.getLocalUri()).toFile().exists()) {
-                        audioPlayerManager.loadItem(ml.getLocalUri(), audioLoader).get();
-                    } else {
-                        final String mediaUrl = UriComponentsBuilder
-                                .fromUriString(shurapleerClient.getBasePath())
-                                .pathSegment("api", "files", ml.getPublicId())
-                                .build().toUriString();
-                        audioPlayerManager.loadItem(mediaUrl, audioLoader).get();
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    LOGGER.error("Blocking loading of track: " + ml.getLocalUri() + " name: " + ml.getName(), e);
-                }
+                loadAudioPlayer(ml);
             }
+        } else {
+            String mediaId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
+            ShurapleerClient.MediaLocation mediaLocation = shurapleerClient.getMediaLocation(mediaId);
+            if (mediaLocation != null) {
+                loadAudioPlayer(mediaLocation);
+            } else {
+                LOGGER.error("Unexpected, {} url returned no media", url);
+            }
+        }
+    }
+
+    public void loadAudioPlayer(ShurapleerClient.MediaLocation ml) {
+        try {
+            if (Path.of(ml.getLocalUri()).toFile().exists()) {
+                audioPlayerManager.loadItem(ml.getLocalUri(), audioLoader).get();
+            } else {
+                final String mediaUrl = UriComponentsBuilder
+                        .fromUriString(shurapleerClient.getBasePath())
+                        .pathSegment("api", "files", ml.getPublicId())
+                        .build().toUriString();
+                audioPlayerManager.loadItem(mediaUrl, audioLoader).get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Blocking loading of track: " + ml.getLocalUri() + " name: " + ml.getName(), e);
         }
     }
 }

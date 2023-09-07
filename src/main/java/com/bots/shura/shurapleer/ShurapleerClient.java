@@ -20,14 +20,26 @@ public class ShurapleerClient {
         return basePath;
     }
 
-    public List<MediaLocation> getPlaylistMediaLocations(String playlistId) {
-        var request = UriComponentsBuilder.fromUriString(basePath)
-                .pathSegment("api", "media-location", "playlist", playlistId)
-                .build().toUriString();
+    public List<MediaLocation> getPlaylistMediaLocations(String playlistId, String mediaId) {
+        var requestBuilder = UriComponentsBuilder.fromUriString(basePath)
+                .pathSegment("api", "media-location", "playlist", playlistId);
 
+        if (mediaId != null) {
+            requestBuilder.pathSegment("media", mediaId);
+        }
+
+        var request = requestBuilder.build().toUriString();
         MediaLocation[] result = restTemplate.getForObject(request, MediaLocation[].class);
 
         return result == null ? List.of() : Arrays.asList(result);
+    }
+
+    public MediaLocation getMediaLocation(String mediaId) {
+        var request = UriComponentsBuilder.fromUriString(basePath)
+                .pathSegment("api", "media-location", "media", mediaId)
+                .build().toUriString();
+
+        return restTemplate.getForObject(request, MediaLocation.class);
     }
 
     static class MediaLocation {

@@ -9,6 +9,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -29,7 +30,12 @@ public class Shurapleer {
     }
 
     public void loadTracks(String url) {
+        boolean randomize = StringUtils.startsWith(url, "r");
+        if (randomize) {
+            url = StringUtils.substringAfter(url, "r");
+        }
         boolean isPlaylist = StringUtils.contains(url, "playlist");
+        boolean isAccount = StringUtils.contains(url, "account");
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url);
         UriComponents uriComponents = uriBuilder.build();
@@ -46,7 +52,18 @@ public class Shurapleer {
             }
 
             List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getPlaylistMediaLocations(playlistId, mediaId);
-
+            if (randomize) {
+                Collections.shuffle(mediaLocations);
+            }
+            for (var ml : mediaLocations) {
+                loadAudioPlayer(ml);
+            }
+        } else if (isAccount) {
+            String accountId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 2);
+            List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getAccountMediaLocations(accountId);
+            if (randomize) {
+                Collections.shuffle(mediaLocations);
+            }
             for (var ml : mediaLocations) {
                 loadAudioPlayer(ml);
             }

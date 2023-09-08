@@ -42,6 +42,16 @@ public class ShurapleerClient {
         return restTemplate.getForObject(request, MediaLocation.class);
     }
 
+    public List<MediaLocation> getAccountMediaLocations(String accountId) {
+        var request = UriComponentsBuilder.fromUriString(basePath)
+                .pathSegment("api", "media-location", "account", accountId)
+                .build().toUriString();
+
+        MediaLocation[] result = restTemplate.getForObject(request, MediaLocation[].class);
+
+        return result == null ? List.of() : Arrays.asList(result);
+    }
+
     static class MediaLocation {
         String publicId;
         String localUri;

@@ -3,7 +3,9 @@ package com.bots.shura.guild;
 import com.bots.shura.audio.*;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.YoutubeUrlCorrection;
+import com.bots.shura.db.entities.Media;
 import com.bots.shura.db.entities.Track;
+import com.bots.shura.db.repositories.MediaRepository;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.shurapleer.Shurapleer;
 import com.bots.shura.shurapleer.ShurapleerClient;
@@ -44,35 +46,41 @@ public class GuildMusic {
 
     private final TrackRepository trackRepository;
 
+    private final MediaRepository mediaRepository;
+
     private final Downloader downloader;
+
+    private final MediaAction mediaAction;
 
     private final YoutubeUrlCorrection youtubeUrlCorrection;
 
     private Shurapleer shurapleer;
 
-    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, Downloader downloader, ShurapleerClient shurapleerClient) {
+    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, MediaRepository mediaRepository, Downloader downloader, ShurapleerClient shurapleerClient, MediaAction mediaAction) {
         this.voiceChannel = voiceChannel;
         this.trackRepository = trackRepository;
+        this.mediaRepository = mediaRepository;
         this.downloader = downloader;
+        this.mediaAction = mediaAction;
         this.audioPlayerManager = playerManager();
         this.youtubeUrlCorrection = new YoutubeUrlCorrection();
         {
             // Create an AudioPlayer so Discord4J can receive audio data
             final AudioPlayer audioPlayer = audioPlayerManager.createPlayer();
+            this.audioLoader = new AudioLoader(audioPlayer);
             {
                 this.trackPlayer = new TrackPlayer(this.voiceChannel.getGuild().getIdLong(), audioPlayer);
-                this.trackScheduler = new TrackScheduler(trackPlayer, trackRepository);
+                this.trackScheduler = new TrackScheduler(trackPlayer, mediaAction, audioLoader, audioPlayerManager, mediaRepository);
                 {
                     audioPlayer.addListener(trackScheduler);
                     audioPlayer.setVolume(20);
                 }
             }
 
-            this.audioLoader = new AudioLoader(trackScheduler, trackRepository);
             this.audioProvider = new LavaPlayerAudioProvider(audioPlayer);
 
             if (shurapleerClient != null) {
-                this.shurapleer = new Shurapleer(shurapleerClient, audioPlayerManager, audioLoader);
+                this.shurapleer = new Shurapleer(this.voiceChannel.getGuild().getIdLong(), shurapleerClient, audioPlayerManager, audioLoader, mediaRepository);
             }
         }
 
@@ -121,6 +129,12 @@ public class GuildMusic {
                 audioPlayerManager.loadItem(correctedUrl, audioLoader);
             }
         }
+        Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
+        if (currentMedia != null) {
+            return;
+        }
+        // first process, then load item but do so from database
+        mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
     }
 
     public void leave() {
@@ -149,48 +163,7 @@ public class GuildMusic {
 
     public void recoverOnStartup() {
         // check if player didn't finish playing tracks from previous shutdown/crash
-        List<Track> unPlayedTracks = trackRepository.findAllQueuedOrPlayingOrPausedByGuildId(this.voiceChannel.getGuild().getIdLong());
-        Optional.of(unPlayedTracks).ifPresent(tracks -> {
-            if (tracks.size() > 0) {
-                // todo substitute source with cache if exists and cache enabled
-                // prevent saving duplicates to db upon restart - probably a better way to do this without
-                // blocking on loadItem
-                audioLoader.setReloadingTracks(true);
-                List<Downloader.TrackEntry> playlistEntries = new ArrayList<>();
-
-                for (Track t : unPlayedTracks) {
-                    if (t.getOrigin() == TrackOrigin.PLAYLIST) {
-                        Downloader.TrackEntry trackEntry = new Downloader.TrackEntry();
-                        trackEntry.uri = t.getLink();
-                        trackEntry.playlistId = null;
-                        trackEntry.playlistName = t.getPlaylistName();
-                        trackEntry.id = null;
-                        trackEntry.playlistIndex = null;
-                        trackEntry.title = t.getName();
-
-                        playlistEntries.add(trackEntry);
-                    } else {
-                        Downloader.TrackEntry trackEntry = new Downloader.TrackEntry();
-                        trackEntry.uri = t.getLink();
-                        trackEntry.playlistName = "";
-                        trackEntry.title = t.getName();
-
-                        playlistEntries.add(trackEntry);
-                    }
-                }
-
-                audioLoader.setCachedEntriesToLoad(playlistEntries);
-                tracks.forEach(track -> {
-                    try {
-                        audioPlayerManager.loadItem(track.getLink(), audioLoader).get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        LOGGER.error("Startup recovery failed", e);
-                    }
-                });
-                audioLoader.setCachedEntriesToLoad(null);
-                audioLoader.setReloadingTracks(false);
-            }
-        });
+        mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
     }
 
     /**

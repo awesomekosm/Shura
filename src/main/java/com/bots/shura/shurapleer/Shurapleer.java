@@ -1,6 +1,8 @@
 package com.bots.shura.shurapleer;
 
 import com.bots.shura.audio.AudioLoader;
+import com.bots.shura.db.entities.Media;
+import com.bots.shura.db.repositories.MediaRepository;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -8,25 +10,28 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+
+import static com.bots.shura.shurapleer.ShurapleerClient.MediaLocation;
 
 public class Shurapleer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Shurapleer.class);
 
     private final ShurapleerClient shurapleerClient;
-    private final AudioPlayerManager audioPlayerManager;
-    private final AudioLoader audioLoader;
+    private final MediaRepository mediaRepository;
+    private final long guildId;
 
-    public Shurapleer(ShurapleerClient shurapleerClient,
+    public Shurapleer(long guildId,
+                      ShurapleerClient shurapleerClient,
                       AudioPlayerManager audioPlayerManager,
-                      AudioLoader audioLoader) {
+                      AudioLoader audioLoader,
+                      MediaRepository mediaRepository) {
+        this.guildId = guildId;
         this.shurapleerClient = shurapleerClient;
-        this.audioPlayerManager = audioPlayerManager;
-        this.audioLoader = audioLoader;
+        this.mediaRepository = mediaRepository;
     }
 
     public void loadTracks(String url) {
@@ -51,46 +56,46 @@ public class Shurapleer {
                 playlistId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
             }
 
-            List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getPlaylistMediaLocations(playlistId, mediaId);
+            List<MediaLocation> mediaLocations = shurapleerClient.getPlaylistMediaLocations(playlistId, mediaId);
             if (randomize) {
                 Collections.shuffle(mediaLocations);
             }
             for (var ml : mediaLocations) {
-                loadAudioPlayer(ml);
+                addToMediaRepository(url, ml);
             }
         } else if (isAccount) {
             String accountId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 2);
-            List<ShurapleerClient.MediaLocation> mediaLocations = shurapleerClient.getAccountMediaLocations(accountId);
+            List<MediaLocation> mediaLocations = shurapleerClient.getAccountMediaLocations(accountId);
             if (randomize) {
                 Collections.shuffle(mediaLocations);
             }
             for (var ml : mediaLocations) {
-                loadAudioPlayer(ml);
+                addToMediaRepository(url, ml);
             }
         } else {
             String mediaId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
-            ShurapleerClient.MediaLocation mediaLocation = shurapleerClient.getMediaLocation(mediaId);
+            MediaLocation mediaLocation = shurapleerClient.getMediaLocation(mediaId);
             if (mediaLocation != null) {
-                loadAudioPlayer(mediaLocation);
+                addToMediaRepository(url, mediaLocation);
             } else {
                 LOGGER.error("Unexpected, {} url returned no media", url);
             }
         }
     }
 
-    public void loadAudioPlayer(ShurapleerClient.MediaLocation ml) {
-        try {
-            if (Path.of(ml.getLocalUri()).toFile().exists()) {
-                audioPlayerManager.loadItem(ml.getLocalUri(), audioLoader).get();
-            } else {
-                final String mediaUrl = UriComponentsBuilder
-                        .fromUriString(shurapleerClient.getBasePath())
-                        .pathSegment("api", "files", ml.getPublicId())
-                        .build().toUriString();
-                audioPlayerManager.loadItem(mediaUrl, audioLoader).get();
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.error("Blocking loading of track: " + ml.getLocalUri() + " name: " + ml.getName(), e);
-        }
+    public void addToMediaRepository(String source, MediaLocation ml) {
+        Media media = new Media();
+        media.setGuildId(guildId);
+        media.setName(ml.getName());
+        media.setArtist(ml.getArtist());
+        media.setAlbum(ml.getAlbum());
+        media.setLink(ml.getLocalUri());
+        media.setGuid(ml.getPublicId());
+        media.setSource(source);
+        media.setRequestTime(LocalDateTime.now());
+        media.setStartTime(null);
+        media.setFinishTime(null);
+
+        mediaRepository.save(media);
     }
 }

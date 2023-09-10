@@ -8,14 +8,10 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.concurrent.ExecutionException;
 
 
 public class TrackScheduler extends AudioEventAdapter {
@@ -83,29 +79,15 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void skipPlaylist() {
-//        if (currentTrack != null && currentTrack.getOrigin().equals(TrackOrigin.PLAYLIST)) {
-//            LoadedTrack lt = trackQueue.peek();
-//            // the very last track, just stop it
-//            if (lt == null) {
-//                trackPlayer.getAudioPlayer().stopTrack();
-//                return;
-//            }
-//            if (lt.getOrigin().equals(TrackOrigin.PLAYLIST) && currentTrack.getPlaylistName().equals(lt.getPlaylistName())) {
-//                while (!trackQueue.isEmpty() && lt != null && currentTrack.getPlaylistName().equals(lt.getPlaylistName())) {
-//                    List<Track> dbSkipTracks = trackRepository.findAllNotSkippedOrFinishedByNameAndGuildId(lt.getTitle(), trackPlayer.getGuildId());
-//                    if (dbSkipTracks.size() > 0 && dbSkipTracks.get(0).getPlaylistName().equals(lt.getPlaylistName())) {
-//                        trackRepository.updateTrackStatus(dbSkipTracks.get(0), TrackPlayStatus.SKIPPED);
-//                    }
-//                    trackQueue.remove();
-//                    lt = trackQueue.peek();
-//                }
-//                trackPlayer.getAudioPlayer().stopTrack();
-//            }
-//        }
+        mediaRepository.skipCurrentPlaylist(trackPlayer.getGuildId());
+        trackPlayer.getAudioPlayer().stopTrack();
     }
 
-    public TrackPlayer getTrackPlayer() {
-        return trackPlayer;
+    public void skip(int skipNumber) {
+        if (skipNumber > 0) {
+            mediaRepository.skipMedia(trackPlayer.getGuildId(), skipNumber);
+            trackPlayer.getAudioPlayer().stopTrack();
+        }
     }
 
 }

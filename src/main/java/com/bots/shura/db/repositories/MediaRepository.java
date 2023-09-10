@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -84,8 +85,80 @@ public class MediaRepository {
         ) > 0;
     }
 
+    public List<Media> getCurrentPlaylist(long guildId) {
+        final String sql = """
+                select playlistMedias.id,
+                       playlistMedias.guild_id,
+                       playlistMedias.name,
+                       playlistMedias.artist,
+                       playlistMedias.album,
+                       playlistMedias.link,
+                       playlistMedias.guid,
+                       playlistMedias.source,
+                       playlistMedias.request_guid,
+                       playlistMedias.request_time,
+                       playlistMedias.start_time,
+                       playlistMedias.finish_time
+                from media as playlistMedias
+                         join (select source, request_guid
+                               from media as m
+                                        join current_media as cm
+                               where m.id = cm.media_id
+                                 and cm.guild_id = :guildId) currentMedia
+                where playlistMedias.source = currentMedia.source
+                  and playlistMedias.request_guid = currentMedia.request_guid
+                  and playlistMedias.finish_time is null
+                order by id;
+                """;
+        final Map<String, ?> map = Map.of("guildId", guildId);
+
+        return namedParameterJdbcTemplate.query(sql, map, new MediaRepository.MediaRowMapper());
+    }
+
+    public boolean skipMedia(long guildId, int totalToSkip) {
+        final String sql = """
+                update media
+                set finish_time = :finishTime
+                where id in (select id
+                             from media as playlistMedias
+                                      join (select source, request_guid
+                                            from media as m
+                                                     join current_media as cm
+                                            where m.id = cm.media_id
+                                              and cm.guild_id = :guildId)
+                             where finish_time is null
+                             limit :skip);
+                """;
+        return namedParameterJdbcTemplate.update(sql,
+                Map.of("finishTime", LocalDateTime.now(),
+                        "skip", totalToSkip,
+                        "guildId", guildId)
+        ) > 0;
+    }
+
+    public boolean skipCurrentPlaylist(long guildId) {
+        final String sql = """
+                update media
+                set finish_time = :finishTime
+                where id in (select id
+                             from media as playlistMedias
+                                      join (select source, request_guid
+                                            from media as m
+                                                     join current_media as cm
+                                            where m.id = cm.media_id
+                                              and cm.guild_id = :guildId) currentMedia
+                             where playlistMedias.source = currentMedia.source
+                               and playlistMedias.request_guid = currentMedia.request_guid
+                               and finish_time is null);
+                """;
+        return namedParameterJdbcTemplate.update(sql,
+                Map.of("finishTime", LocalDateTime.now(),
+                        "guildId", guildId)
+        ) > 0;
+    }
+
     public boolean save(Media media) {
-        final String sql = "insert into media (guild_id, name, artist, album, link, guid, source, request_time, finish_time) values (:guildId, :name, :artist, :album, :link, :guid, :source, :requestTime, :finishTime);";
+        final String sql = "insert into media (guild_id, name, artist, album, link, guid, source, request_guid, request_time, finish_time) values (:guildId, :name, :artist, :album, :link, :guid, :source, :requestGuid, :requestTime, :finishTime);";
         final Map<String, Object> map = new HashMap<>();
         map.put("guildId", media.getGuildId());
         map.put("name", media.getName());
@@ -94,6 +167,7 @@ public class MediaRepository {
         map.put("link", media.getLink());
         map.put("guid", media.getGuid());
         map.put("source", media.getSource());
+        map.put("requestGuid", media.getRequestGuid());
         map.put("requestTime", media.getRequestTime());
         map.put("startTime", media.getStartTime());
         map.put("finishTime", media.getFinishTime());
@@ -114,6 +188,7 @@ public class MediaRepository {
             media.setLink(resultSet.getString("link"));
             media.setGuid(resultSet.getString("guid"));
             media.setSource(resultSet.getString("source"));
+            media.setRequestGuid(resultSet.getString("request_guid"));
             media.setRequestTime(LocalDateTime.parse(resultSet.getString("request_time")));
             final String startTimeString = resultSet.getString("start_time");
             if (startTimeString != null) {

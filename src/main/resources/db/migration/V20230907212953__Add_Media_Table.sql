@@ -9,7 +9,11 @@ CREATE TABLE media
     link VARCHAR,
     guid VARCHAR,
     source VARCHAR,
+    request_guid VARCHAR,
     request_time VARCHAR,
     start_time VARCHAR,
     finish_time VARCHAR
 );
+
+CREATE INDEX media_request_finish_source_idx ON media (request_guid, finish_time, source);
+

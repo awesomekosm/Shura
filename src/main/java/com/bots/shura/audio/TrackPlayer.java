@@ -6,7 +6,6 @@ public class TrackPlayer {
 
     private final AudioPlayer audioPlayer;
     private final long guildId;
-    private int skipCount = 0;
 
     public TrackPlayer(long guildId, AudioPlayer audioPlayer) {
         this.audioPlayer = audioPlayer;
@@ -21,11 +20,4 @@ public class TrackPlayer {
         return guildId;
     }
 
-    public int getSkipCount() {
-        return skipCount;
-    }
-
-    public void setSkipCount(int skipCount) {
-        this.skipCount = skipCount;
-    }
 }

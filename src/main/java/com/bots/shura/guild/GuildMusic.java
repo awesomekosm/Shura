@@ -4,7 +4,6 @@ import com.bots.shura.audio.*;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.YoutubeUrlCorrection;
 import com.bots.shura.db.entities.Media;
-import com.bots.shura.db.entities.Track;
 import com.bots.shura.db.repositories.MediaRepository;
 import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.shurapleer.Shurapleer;
@@ -22,9 +21,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -150,11 +147,7 @@ public class GuildMusic {
     }
 
     public void skip(int skipNum) {
-        if (skipNum > 1) {
-            //skipping current - end event in scheduler will deduct the rest
-            trackPlayer.setSkipCount(skipNum - 1);
-        }
-        trackPlayer.getAudioPlayer().stopTrack();
+        trackScheduler.skip(skipNum);
     }
 
     public void skipPlaylist() {

@@ -11,6 +11,7 @@ public class Media {
     private String link;
     private String guid;
     private String source;
+    private String requestGuid;
     private LocalDateTime requestTime;
     private LocalDateTime startTime;
     private LocalDateTime finishTime;
@@ -79,6 +80,14 @@ public class Media {
         this.source = source;
     }
 
+    public String getRequestGuid() {
+        return requestGuid;
+    }
+
+    public void setRequestGuid(String requestGuid) {
+        this.requestGuid = requestGuid;
+    }
+
     public LocalDateTime getRequestTime() {
         return requestTime;
     }
@@ -114,6 +123,7 @@ public class Media {
                 ", link='" + link + '\'' +
                 ", guid='" + guid + '\'' +
                 ", source='" + source + '\'' +
+                ", requestGuid='" + requestGuid + '\'' +
                 ", requestTime=" + requestTime +
                 ", startTime=" + startTime +
                 ", finishTime=" + finishTime +

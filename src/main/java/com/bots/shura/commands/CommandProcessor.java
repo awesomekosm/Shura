@@ -164,7 +164,7 @@ public class CommandProcessor {
                     }
                 }
             } else {
-                safeGuildOperation(event.getGuild().getIdLong(), (guildMusic -> guildMusic.skip(0)));
+                safeGuildOperation(event.getGuild().getIdLong(), (guildMusic -> guildMusic.skip(1)));
             }
         }
     }

@@ -13,6 +13,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.bots.shura.shurapleer.ShurapleerClient.MediaLocation;
 
@@ -35,6 +36,7 @@ public class Shurapleer {
     }
 
     public void loadTracks(String url) {
+        UUID requestGuid = UUID.randomUUID();
         boolean randomize = StringUtils.startsWith(url, "r");
         if (randomize) {
             url = StringUtils.substringAfter(url, "r");
@@ -61,7 +63,7 @@ public class Shurapleer {
                 Collections.shuffle(mediaLocations);
             }
             for (var ml : mediaLocations) {
-                addToMediaRepository(url, ml);
+                addToMediaRepository(url, requestGuid.toString(), ml);
             }
         } else if (isAccount) {
             String accountId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 2);
@@ -70,20 +72,20 @@ public class Shurapleer {
                 Collections.shuffle(mediaLocations);
             }
             for (var ml : mediaLocations) {
-                addToMediaRepository(url, ml);
+                addToMediaRepository(url, requestGuid.toString(), ml);
             }
         } else {
             String mediaId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 1);
             MediaLocation mediaLocation = shurapleerClient.getMediaLocation(mediaId);
             if (mediaLocation != null) {
-                addToMediaRepository(url, mediaLocation);
+                addToMediaRepository(url, requestGuid.toString(), mediaLocation);
             } else {
                 LOGGER.error("Unexpected, {} url returned no media", url);
             }
         }
     }
 
-    public void addToMediaRepository(String source, MediaLocation ml) {
+    public void addToMediaRepository(String source, String requestGuid, MediaLocation ml) {
         Media media = new Media();
         media.setGuildId(guildId);
         media.setName(ml.getName());
@@ -92,6 +94,7 @@ public class Shurapleer {
         media.setLink(ml.getLocalUri());
         media.setGuid(ml.getPublicId());
         media.setSource(source);
+        media.setRequestGuid(requestGuid);
         media.setRequestTime(LocalDateTime.now());
         media.setStartTime(null);
         media.setFinishTime(null);

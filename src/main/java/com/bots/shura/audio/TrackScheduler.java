@@ -67,15 +67,13 @@ public class TrackScheduler extends AudioEventAdapter {
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
         // An already playing track threw an exception (track end event will still be received separately)
         LOGGER.error("Playing track threw an exception", exception);
+        mediaAction.skipTrackOnError(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
     }
 
     @Override
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-        Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
-        LOGGER.error("Track is stuck {}",  currentMedia);
-        // Audio track has been unable to provide us any audio, might want to just start a new track
-        mediaRepository.updateMediaFinishTime(currentMedia.getId(), LocalDateTime.now());
-        mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
+        LOGGER.error("Track is stuck");
+        mediaAction.skipTrackOnError(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
     }
 
     public void skipPlaylist() {

@@ -27,6 +27,14 @@ public class MediaAction {
         this.mediaRepository = mediaRepository;
     }
 
+    public void skipTrackOnError(AudioPlayerManager audioPlayerManager, AudioLoader audioLoader, long guildId) {
+        Media currentMedia = mediaRepository.getCurrentMedia(guildId);
+        LOGGER.error("Couldn't load {}",  currentMedia);
+        // Audio track has been unable to provide us any audio, might want to just start a new track
+        mediaRepository.updateMediaFinishTime(currentMedia.getId(), LocalDateTime.now());
+        nextTrack(audioPlayerManager, audioLoader, guildId);
+    }
+
     public void nextTrack(AudioPlayerManager audioPlayerManager, AudioLoader audioLoader, long guildId) {
         Media media = mediaRepository.getNonFinishedByGuildId(guildId);
         if (media != null) {

@@ -64,7 +64,7 @@ public class GuildMusic {
         {
             // Create an AudioPlayer so Discord4J can receive audio data
             final AudioPlayer audioPlayer = audioPlayerManager.createPlayer();
-            this.audioLoader = new AudioLoader(audioPlayer);
+            this.audioLoader = new AudioLoader(audioPlayer, mediaAction, audioPlayerManager, this.voiceChannel.getGuild().getIdLong());
             {
                 this.trackPlayer = new TrackPlayer(this.voiceChannel.getGuild().getIdLong(), audioPlayer);
                 this.trackScheduler = new TrackScheduler(trackPlayer, mediaAction, audioLoader, audioPlayerManager, mediaRepository);

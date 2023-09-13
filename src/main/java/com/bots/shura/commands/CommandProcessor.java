@@ -3,7 +3,6 @@ package com.bots.shura.commands;
 import com.bots.shura.audio.MediaAction;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.db.repositories.MediaRepository;
-import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.guild.GuildMusic;
 import com.bots.shura.shurapleer.ShurapleerClient;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
@@ -39,20 +38,17 @@ public class CommandProcessor {
 
     private final Map<CommandName, Command> commandMap = new HashMap<>();
 
-    private final TrackRepository trackRepository;
     private final MediaRepository mediaRepository;
     private final Downloader downloader;
     private final MediaAction mediaAction;
     private final ShurapleerClient shurapleerClient;
 
     public CommandProcessor(MediaAction mediaAction,
-                            TrackRepository trackRepository,
                             MediaRepository mediaRepository,
                             @Autowired(required = false) ShurapleerClient shurapleerClient,
                             @Autowired(required = false) Downloader downloader) {
 
         this.mediaAction = mediaAction;
-        this.trackRepository = trackRepository;
         this.mediaRepository = mediaRepository;
         this.downloader = downloader;
         this.shurapleerClient = shurapleerClient;
@@ -93,7 +89,7 @@ public class CommandProcessor {
                         final GuildMusic guildMusic = guildMusicConnections.get(guildId);
                         // if not connected, connect
                         if (guildMusic == null) {
-                            guildMusicConnections.put(guildId, new GuildMusic(channel, trackRepository, mediaRepository, downloader, shurapleerClient, mediaAction));
+                            guildMusicConnections.put(guildId, new GuildMusic(channel,mediaRepository, downloader, shurapleerClient, mediaAction));
                         } else {
                             safeGuildOperation(guildId, (gm) -> gm.reconnectVoiceChannel(channel));
                         }

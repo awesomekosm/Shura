@@ -5,7 +5,6 @@ import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.YoutubeUrlCorrection;
 import com.bots.shura.db.entities.Media;
 import com.bots.shura.db.repositories.MediaRepository;
-import com.bots.shura.db.repositories.TrackRepository;
 import com.bots.shura.shurapleer.Shurapleer;
 import com.bots.shura.shurapleer.ShurapleerClient;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
@@ -43,8 +42,6 @@ public class GuildMusic {
 
     private final AudioPlayerManager audioPlayerManager;
 
-    private final TrackRepository trackRepository;
-
     private final MediaRepository mediaRepository;
 
     private final Downloader downloader;
@@ -55,9 +52,8 @@ public class GuildMusic {
 
     private Shurapleer shurapleer;
 
-    public GuildMusic(VoiceChannel voiceChannel, TrackRepository trackRepository, MediaRepository mediaRepository, Downloader downloader, ShurapleerClient shurapleerClient, MediaAction mediaAction) {
+    public GuildMusic(VoiceChannel voiceChannel, MediaRepository mediaRepository, Downloader downloader, ShurapleerClient shurapleerClient, MediaAction mediaAction) {
         this.voiceChannel = voiceChannel;
-        this.trackRepository = trackRepository;
         this.mediaRepository = mediaRepository;
         this.downloader = downloader;
         this.mediaAction = mediaAction;

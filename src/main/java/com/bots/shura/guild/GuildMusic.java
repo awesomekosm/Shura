@@ -21,7 +21,9 @@ import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -64,7 +66,7 @@ public class GuildMusic {
         {
             // Create an AudioPlayer so Discord4J can receive audio data
             final AudioPlayer audioPlayer = audioPlayerManager.createPlayer();
-            this.audioLoader = new AudioLoader(audioPlayer, mediaAction, audioPlayerManager, this.voiceChannel.getGuild().getIdLong());
+            this.audioLoader = new AudioLoader(audioPlayer, mediaAction, mediaRepository, audioPlayerManager, this.voiceChannel.getGuild().getIdLong());
             {
                 this.trackPlayer = new TrackPlayer(this.voiceChannel.getGuild().getIdLong(), audioPlayer);
                 this.trackScheduler = new TrackScheduler(trackPlayer, mediaAction, audioLoader, audioPlayerManager, mediaRepository);
@@ -123,10 +125,11 @@ public class GuildMusic {
             if (downloader != null) {
                 checkCacheAndLoad(correctedUrl);
             } else {
-                audioPlayerManager.loadItem(correctedUrl, audioLoader);
+                saveUnknownMedia(correctedUrl, UUID.randomUUID().toString());
             }
         }
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
+        // don't need to go to the next track if there is one already one set
         if (currentMedia != null) {
             return;
         }
@@ -170,6 +173,7 @@ public class GuildMusic {
     }
 
     private void checkCacheAndLoad(String url) {
+        UUID requestGuid = UUID.randomUUID();
         // check for playlist in cache
         List<Downloader.TrackEntry> playlistEntries = List.of();
         try {
@@ -184,15 +188,23 @@ public class GuildMusic {
 
             // load songs
             LOGGER.debug("Loading playlist from cache {}", playlistEntries);
-            audioLoader.setCachedEntriesToLoad(playlistEntries);
-            playlistEntries.forEach(playlistSongPath -> {
-                try {
-                    audioPlayerManager.loadItem(playlistSongPath.uri, audioLoader).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    LOGGER.error("Blocking item loading failed", e);
-                }
+
+            playlistEntries.forEach(playlistSong -> {
+                Media media = new Media();
+                media.setGuildId(this.trackPlayer.getGuildId());
+                media.setName(playlistSong.title);
+                media.setArtist(null);
+                media.setAlbum(null);
+                media.setLink(playlistSong.uri);
+                media.setGuid(playlistSong.id);
+                media.setSource(url);
+                media.setRequestGuid(requestGuid.toString());
+                media.setRequestTime(LocalDateTime.now());
+                media.setStartTime(null);
+                media.setFinishTime(null);
+
+                mediaRepository.save(media);
             });
-            audioLoader.setCachedEntriesToLoad(null);
             LOGGER.debug("Loading playlist from cache finished");
             return;
         }
@@ -201,24 +213,54 @@ public class GuildMusic {
         Downloader.TrackEntry singleEntry = downloader.getSingleSong(url);
         if (singleEntry != null) {
             LOGGER.debug("Loading single from cache {}", singleEntry.uri);
-            audioLoader.setCachedEntriesToLoad(List.of(singleEntry));
-            try {
-                audioPlayerManager.loadItem(singleEntry.uri, audioLoader).get();
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.error("Blocking item loading failed", e);
-            }
-            audioLoader.setCachedEntriesToLoad(null);
+            Media media = new Media();
+            media.setGuildId(this.trackPlayer.getGuildId());
+            media.setName(singleEntry.title);
+            media.setArtist(null);
+            media.setAlbum(null);
+            media.setLink(singleEntry.uri);
+            media.setGuid(singleEntry.id);
+            media.setSource(url);
+            media.setRequestGuid(requestGuid.toString());
+            media.setRequestTime(LocalDateTime.now());
+            media.setStartTime(null);
+            media.setFinishTime(null);
+
+            mediaRepository.save(media);
             return;
         }
 
         // missing from cache, load from source
         LOGGER.debug("Cache miss {}", url);
-        audioPlayerManager.loadItem(url, audioLoader);
+        saveUnknownMedia(url, requestGuid.toString());
         // cache for next time
         try {
             downloader.playlistOrSingle(url);
         } catch (Downloader.YoutubeDLException e) {
             LOGGER.error("Could not cache " + url, e);
         }
+    }
+
+    /**
+     * This url can be youtube playlist or individual media<br>
+     * There is no context about it, so it gets loaded by audio loader
+     * @param url
+     * @param requestGuid
+     */
+    public void saveUnknownMedia(String url, String requestGuid) {
+        Media media = new Media();
+        media.setGuildId(this.trackPlayer.getGuildId());
+        media.setName(url);
+        media.setArtist(null);
+        media.setAlbum(null);
+        media.setLink(url);
+        media.setGuid(url);
+        media.setSource(url);
+        media.setRequestGuid(requestGuid);
+        media.setRequestTime(LocalDateTime.now());
+        media.setStartTime(null);
+        media.setFinishTime(null);
+
+        mediaRepository.save(media);
     }
 }

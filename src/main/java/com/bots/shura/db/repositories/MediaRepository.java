@@ -120,13 +120,15 @@ public class MediaRepository {
                 update media
                 set finish_time = :finishTime
                 where id in (select id
-                             from media as playlistMedias
+                             from media as guildsMedia
                                       join (select source, request_guid
                                             from media as m
                                                      join current_media as cm
                                             where m.id = cm.media_id
                                               and cm.guild_id = :guildId)
-                             where finish_time is null
+                             where guildsMedia.finish_time is null
+                               and guildsMedia.guild_id = :guildId
+                             order by guildsMedia.id
                              limit :skip);
                 """;
         return namedParameterJdbcTemplate.update(sql,
@@ -149,6 +151,7 @@ public class MediaRepository {
                                               and cm.guild_id = :guildId) currentMedia
                              where playlistMedias.source = currentMedia.source
                                and playlistMedias.request_guid = currentMedia.request_guid
+                               and playlistMedias.guild_id = :guildId
                                and finish_time is null);
                 """;
         return namedParameterJdbcTemplate.update(sql,

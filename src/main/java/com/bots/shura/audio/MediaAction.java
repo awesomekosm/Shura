@@ -63,6 +63,8 @@ public class MediaAction {
                         .build().toUriString();
                 audioPlayerManager.loadItem(mediaUrl, audioLoader);
             }
+        } else {
+            audioPlayerManager.loadItem(media.getLink(), audioLoader);
         }
     }
 }

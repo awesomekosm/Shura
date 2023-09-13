@@ -134,8 +134,8 @@ public class Downloader {
 
         final String playListSyncJSON = playlist(playlistUrl, true).get();
         if (playListSyncJSON == null) {
-            LOGGER.error("Failed to get playlist --dump-single-json");
-            throw new YoutubeDLException("Failed to load playlist " + playlistUrl + " from youtube");
+            LOGGER.error("Failed to get playlist --dump-single-json" + "Failed to load playlist " + playlistUrl + " from youtube");
+            return List.of();
         }
         try {
             // merge cached and newly added tracks
@@ -260,13 +260,15 @@ public class Downloader {
             try {
                 return run("--download-archive", cacheDirectory + "/singles/archive.txt",
                         "--ignore-errors",
+                        "--force-ipv4",
                         "--http-chunk-size", "1M",
                         "-o",
                         cacheDirectory + "/singles/%(id)s-%(title)s.%(ext)s",
                         "-x",
                         "-f", "best[filesize<50M]",
+                        "--max-filesize", "50M",
                         "--audio-quality", "0",
-                        "--audio-format", "best",
+                        "--audio-format", "mp3",
                         url);
             } catch (YoutubeDLException e) {
                 LOGGER.error("Downloading single failed", e);
@@ -281,13 +283,14 @@ public class Downloader {
                 List<String> ytdlArgs = new ArrayList<>(Arrays.asList(
                         "--download-archive", cacheDirectory + "/archive.txt",
                         "--ignore-errors",
+                        "--force-ipv4",
                         "--http-chunk-size", chunkSize,
                         "-o",
                         cacheDirectory + "/%(playlist_id)s-%(playlist)s/%(id)s-%(playlist_index)s-%(title)s.%(ext)s",
                         "-x",
-                        "-f", "best[filesize<50M]",
+                        "--max-filesize", "50M",
                         "--audio-quality", "0",
-                        "--audio-format", "best",
+                        "--audio-format", "mp3",
                         url
                 ));
 
@@ -339,13 +342,14 @@ public class Downloader {
     public String channel(String url) throws YoutubeDLException {
         return run("--download-archive", cacheDirectory + "/archive.txt",
                 "--ignore-errors",
+                "--force-ipv4",
                 "--http-chunk-size", "1M",
                 "-o",
                 cacheDirectory + "/%(playlist_id)s-%(playlist)s/%(id)s-%(playlist_index)s-%(title)s.%(ext)s",
                 "-x",
-                "-f", "best",
+                "--max-filesize", "50M",
                 "--audio-quality", "0",
-                "--audio-format", "best",
+                "--audio-format", "mp3",
                 url);
     }
 

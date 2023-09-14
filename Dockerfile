@@ -1,6 +1,6 @@
-# https://hub.docker.com/_/eclipse-temurin/?tab=tags&page=1&name=17-jdk-alpine
+# https://hub.docker.com/_/eclipse-temurin/?tab=tags&page=1&name=19-jdk-alpine
 # Custom Java runtime using jlink in a multi-stage container build
-FROM eclipse-temurin:17-jdk-alpine@sha256:8c1cea92d1928e0e068cd3b861fba4c0f5ee164a0490401d6bb3186329496401 as jre-build
+FROM eclipse-temurin:19-jdk-alpine as jre-build
 
 # Create a custom Java runtime and patchelf with glibc to replace musl
 RUN apk --no-cache upgrade && \
@@ -23,14 +23,14 @@ RUN apk --no-cache upgrade && \
 
 ADD target/shura-*.jar /javaruntime/app.jar
 
-# https://hub.docker.com/_/alpine?tab=tags&page=1&name=3.15.0
+# https://hub.docker.com/_/alpine?tab=tags&page=1&name=3.18.3
 # Define your base image
-FROM alpine:3.15.3@sha256:1e014f84205d569a5cc3be4e108ca614055f7e21d11928946113ab3f36054801
+FROM alpine:3.18.3
 
 ARG JAVA_OPTS
 
 RUN apk --no-cache upgrade && \
-    apk --no-cache add ffmpeg python3 gcompat && \
+    apk --no-cache add ffmpeg python3 gcompat ca-certificates && \
     ln -sf python3 /usr/bin/python && \
     mkdir /opt/tools && \
     mkdir /opt/java && \

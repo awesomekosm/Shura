@@ -1,6 +1,8 @@
 #!/bin/bash
 
-docker rmi local/shura
+set -e
+
+docker rmi local/shura || true
 
 docker build --pull --no-cache --tag local/shura:latest .
 

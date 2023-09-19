@@ -7,8 +7,10 @@ import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
@@ -19,7 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,25 +54,31 @@ public class Config {
                                     Map<CommandName, List<String>> commandAliases) {
 
         return JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
+                .enableIntents(GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new ListenerAdapter() {
                     @Override
-                    public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
-                        final String content = StringUtils.trimToEmpty(event.getMessage().getContentRaw());
-                        if (StringUtils.isNoneBlank(content)) {
-                            if (shuraProperties.isDrunkMode()) {
-                                List<String> input = Utils.parseCommands(content, 2);
-                                CommandName cmd = bestFitCommand(commandAliases, input.get(0).toUpperCase(), shuraProperties.getThreshHold());
-                                if (cmd != null) {
-                                    commandProcessor.getCommandMap().get(cmd).execute(event);
-                                }
-                            } else {
-                                for (final Map.Entry<CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
-                                    if (content.startsWith('!' + entry.getKey().name())) {
-                                        entry.getValue().execute(event);
-                                        break;
+                    public void onMessageReceived(MessageReceivedEvent event) {
+                        if (event.isFromType(ChannelType.TEXT)) {
+                            LOGGER.info("[{}][{}] {}: {}", event.getGuild().getName(), event.getChannel().getName(), event.getAuthor(), event.getMessage().getContentDisplay());
+                            final String content = StringUtils.trimToEmpty(event.getMessage().getContentRaw());
+                            if (StringUtils.isNoneBlank(content)) {
+                                if (shuraProperties.isDrunkMode()) {
+                                    List<String> input = Utils.parseCommands(content, 2);
+                                    CommandName cmd = bestFitCommand(commandAliases, input.get(0).toUpperCase(), shuraProperties.getThreshHold());
+                                    if (cmd != null) {
+                                        commandProcessor.getCommandMap().get(cmd).execute(event);
+                                    }
+                                } else {
+                                    for (final Map.Entry<CommandName, Command> entry : commandProcessor.getCommandMap().entrySet()) {
+                                        if (content.startsWith('!' + entry.getKey().name())) {
+                                            entry.getValue().execute(event);
+                                            break;
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            LOGGER.info("Non Text channel {} {} {}", event.getMessage().getType(), event.getAuthor(), event.getMessage().getContentDisplay());
                         }
                     }
                 });

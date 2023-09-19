@@ -7,8 +7,8 @@ import com.bots.shura.guild.GuildMusic;
 import com.bots.shura.shurapleer.ShurapleerClient;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +68,7 @@ public class CommandProcessor {
 
     public class Play implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             List<String> commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2);
             if (commands.size() > 1) {
                 safeGuildOperation(event.getGuild().getIdLong(), (guildMusic) -> guildMusic.play(commands.get(1)));
@@ -78,18 +78,18 @@ public class CommandProcessor {
 
     public class Summon implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             final Member member = event.getMember();
             if (member != null) {
                 final GuildVoiceState voiceState = member.getVoiceState();
                 if (voiceState != null) {
-                    final VoiceChannel channel = voiceState.getChannel();
+                    final VoiceChannel channel = voiceState.getChannel().asVoiceChannel();;
                     if (channel != null) {
                         final long guildId = channel.getGuild().getIdLong();
                         final GuildMusic guildMusic = guildMusicConnections.get(guildId);
                         // if not connected, connect
                         if (guildMusic == null) {
-                            guildMusicConnections.put(guildId, new GuildMusic(channel,mediaRepository, downloader, shurapleerClient, mediaAction));
+                            guildMusicConnections.put(guildId, new GuildMusic(channel, mediaRepository, downloader, shurapleerClient, mediaAction));
                         } else {
                             safeGuildOperation(guildId, (gm) -> gm.reconnectVoiceChannel(channel));
                         }
@@ -112,7 +112,7 @@ public class CommandProcessor {
 
     public class Leave implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             safeGuildOperation(event.getGuild().getIdLong(), (GuildMusic::leave));
             safeGuildOperation(event.getGuild().getIdLong(), (guildMusic -> guildMusicConnections.remove(event.getGuild().getIdLong())));
         }
@@ -120,21 +120,21 @@ public class CommandProcessor {
 
     public class Pause implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             safeGuildOperation(event.getGuild().getIdLong(), (GuildMusic::pause));
         }
     }
 
     public class Resume implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             safeGuildOperation(event.getGuild().getIdLong(), (GuildMusic::resume));
         }
     }
 
     public class Volume implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             List<String> commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2);
             if (commands.size() > 1) {
                 try {
@@ -148,7 +148,7 @@ public class CommandProcessor {
 
     public class Skip implements Command {
         @Override
-        public void execute(GuildMessageReceivedEvent event) {
+        public void execute(MessageReceivedEvent event) {
             List<String> commands = Utils.parseCommands(event.getMessage().getContentRaw(), 2);
             if (commands.size() > 1) {
                 try {

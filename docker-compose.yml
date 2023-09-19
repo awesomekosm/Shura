@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  shura:
+    restart: always
+    container_name: shura
+    image: shurapleer/shura:latest
+    environment:
+      - SHURA_DISCORD_TOKEN=
+    volumes:
+      - $PWD/cache:/opt/cache
+    mem_limit: 150m
+    mem_reservation: 100m
+    cpus: 0.8

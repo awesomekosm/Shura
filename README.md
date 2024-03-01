@@ -99,6 +99,8 @@ shura:
 `./mvnw package`
 * Create container
 `docker build --tag local/shura:latest .`
+or
+`docker buildx build --platform=linux/amd64 -t local/shura:latest .`
 * Run
 `docker run --rm --name shura -v $(pwd)/cache:/opt/cache --env JAVA_OPTS="-Dshura.discord.token=YOUR_TOKEN" local/shura`
 

@@ -9,11 +9,11 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Set up JDK 19
+      - name: Set up JDK 21
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
-          java-version: '19'
+          distribution: 'adopt-openj9'
+          java-version: '21'
       - name: Update version in pom.xml with tag
         run: mvn --batch-mode versions:set -DnewVersion=${{ github.event.release.tag_name }} -DgenerateBackupPoms=false
       - name: Build with Maven

@@ -1,5 +1,5 @@
-# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=19-latest
-FROM azul/zulu-openjdk-debian:19-latest AS builder
+# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=21-latest
+FROM azul/zulu-openjdk-debian:21-latest AS builder
 
 ARG JAVA_OPTS
 
@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     cp /opt/Shura/target/shura-*.jar /opt/app.jar && \
     rm -rf /opt/shura-source
 
-# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=19-jre-headless-latest
-FROM azul/zulu-openjdk-debian:19-jre-headless-latest
+# https://hub.docker.com/r/azul/zulu-openjdk-debian/tags?page=1&name=21-jre-headless-latest
+FROM azul/zulu-openjdk-debian:21-jre-headless-latest
 
 RUN apt-get update && apt-get install -y \
     ffmpeg python3 wget && \

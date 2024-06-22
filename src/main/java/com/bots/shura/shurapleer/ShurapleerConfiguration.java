@@ -50,7 +50,6 @@ public class ShurapleerConfiguration {
                     return clientHttpRequestFactory;
                 })
                 .additionalInterceptors(new OAuth2AuthorizedClientInterceptor(logtoAuthorizedManager))
-                .setBufferRequestBody(true)
                 .build();
     }
 

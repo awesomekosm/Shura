@@ -1,10 +1,11 @@
 # https://hub.docker.com/_/eclipse-temurin/tags?page=1&name=21-jre-alpine
-FROM eclipse-temurin:21-jre-alpine
+FROM ibm-semeru-runtimes:open-21-jre-jammy
 
 ARG JAVA_OPTS
 
-RUN apk --no-cache upgrade && \
-    apk --no-cache add ffmpeg python3 ca-certificates && \
+RUN apt-get update && apt-get install -y \
+    ffmpeg python3 wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
     ln -sf python3 /usr/bin/python && \
     mkdir /opt/tools && \
     cd /opt/tools && \

@@ -265,7 +265,6 @@ public class Downloader {
                         "-o",
                         cacheDirectory + "/singles/%(id)s-%(title)s.%(ext)s",
                         "-x",
-                        "-f", "best[filesize<50M]",
                         "--max-filesize", "50M",
                         "--audio-quality", "0",
                         "--audio-format", "mp3",
@@ -298,6 +297,8 @@ public class Downloader {
                     ytdlArgs.addAll(ytdlArgs.size() - 1,
                             Arrays.asList(
                                     "--simulate",
+                                    "--ignore-errors",
+                                    "--force-ipv4",
                                     "--dump-single-json"
                             ));
                 }

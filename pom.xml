@@ -101,6 +101,7 @@
             <artifactId>v2</artifactId>
             <version>1.18.0</version>
         </dependency>
+        <!-- https://github.com/MinnDevelopment/jdave -->
         <dependency>
             <groupId>club.minnced</groupId>
             <artifactId>jdave-api</artifactId>

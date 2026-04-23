@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/eclipse-temurin/tags?page=1&name=21-jre-alpine
-FROM ibm-semeru-runtimes:open-25-jre-jammy
+FROM ibm-semeru-runtimes:open-25-jre-noble
 
 ARG JAVA_OPTS
 

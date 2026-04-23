@@ -178,9 +178,9 @@ public class CommandProcessor {
     }
 
     private void executePrevious(long guildId) {
-        final Media previousMedia = mediaRepository.getLastFinishedMedia(guildId);
+        final Media previousMedia = mediaRepository.getPreviousMedia(guildId);
         if (previousMedia != null) {
-            safeGuildOperation(guildId, guildMusic -> guildMusic.replayPrevious(previousMedia));
+            safeGuildOperation(guildId, guildMusic -> guildMusic.playPreviousNow(previousMedia));
         }
     }
 

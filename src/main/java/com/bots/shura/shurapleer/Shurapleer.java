@@ -63,7 +63,8 @@ public class Shurapleer {
                 Collections.shuffle(mediaLocations);
             }
             for (var ml : mediaLocations) {
-                addToMediaRepository(url, requestGuid.toString(), ml);
+                String playlistMediaUrl = url + "/media/" + ml.publicId;
+                addToMediaRepository(playlistMediaUrl, requestGuid.toString(), ml);
             }
         } else if (isAccount) {
             String accountId = uriComponents.getPathSegments().get(uriComponents.getPathSegments().size() - 2);

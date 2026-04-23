@@ -125,29 +125,18 @@ public class GuildMusic {
         trackPlayer.getAudioPlayer().setPaused(true);
     }
 
-    /**
-     * Re-queue a copy of a finished track (preserves {@code source} so shurapleer and other flows load correctly).
-     */
-    public void replayPrevious(Media from) {
-        if (from == null) {
-            return;
-        }
-        Media m = new Media();
-        m.setGuildId(trackPlayer.getGuildId());
-        m.setName(from.getName());
-        m.setArtist(from.getArtist());
-        m.setAlbum(from.getAlbum());
-        m.setLink(from.getLink());
-        m.setGuid(from.getGuid());
-        m.setSource(from.getSource());
-        m.setRequestGuid(UUID.randomUUID().toString());
-        m.setRequestTime(LocalDateTime.now());
-        m.setStartTime(null);
-        m.setFinishTime(null);
-        mediaRepository.save(m);
-        Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
-        if (currentMedia == null) {
-            mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
+    public void playPreviousNow(Media from) {
+        long guildId = trackPlayer.getGuildId();
+        // reset currently media so it acts as a next in queue
+        mediaRepository.resetCurrentMedia(guildId);
+        // set previous found media
+        mediaRepository.setCurrentMedia(guildId, from.getId());
+        Media toLoad = mediaRepository.getCurrentMedia(guildId);
+        mediaRepository.clearFinishTimeMedia(toLoad.getId(), guildId);
+        try {
+            mediaAction.loadMedia(audioPlayerManager, audioLoader, toLoad);
+        } catch (Exception e) {
+            LOGGER.error("Failed to load previous media id {}", toLoad.getId(), e);
         }
     }
 

@@ -51,6 +51,14 @@ public class MediaRepository {
         namedParameterJdbcTemplate.update(sql, Map.of("guildId", guildId));
     }
 
+    public void resetCurrentMedia(long guildId) {
+        Media result = getCurrentMedia(guildId);
+        if (result != null) {
+            final String sql = "update media set start_time = null, finish_time = null where id = :mediaId and guild_id = :guildId";
+            namedParameterJdbcTemplate.update(sql, Map.of("mediaId", result.getId(), "guildId", guildId));
+        }
+    }
+
     public boolean setCurrentMedia(long guildId, long mediaId) {
         Media result = getCurrentMedia(guildId);
         if (result == null) {
@@ -85,16 +93,24 @@ public class MediaRepository {
         ) > 0;
     }
 
-    public Media getLastFinishedMedia(long guildId) {
-        final String sql = "select * from media where guild_id = :guildId and finish_time is not null order by finish_time desc, id desc limit 1";
-        final Map<String, ?> map = Map.of("guildId", guildId);
+    public void clearFinishTimeMedia(Long mediaId, long guildId) {
+        final String sql = "update media set finish_time = null where id = :mediaId and guild_id = :guildId";
+        namedParameterJdbcTemplate.update(sql, Map.of("mediaId", mediaId, "guildId", guildId));
+    }
 
+    public Media getPreviousMedia(long guildId) {
+        final String sql = """
+            select m.*
+            from media m
+            left join current_media cm on cm.guild_id = :guildId
+            where m.guild_id = :guildId
+              and (cm.media_id is null or m.id < cm.media_id)
+            order by m.id desc
+            limit 1
+            """;
+        final Map<String, ?> map = Map.of("guildId", guildId);
         var result = namedParameterJdbcTemplate.query(sql, map, new MediaRepository.MediaRowMapper());
-        if (!result.isEmpty()) {
-            return result.get(0);
-        } else {
-            return null;
-        }
+        return result.isEmpty() ? null : result.get(0);
     }
 
     public List<Media> getCurrentPlaylist(long guildId) {
@@ -161,8 +177,7 @@ public class MediaRepository {
                                                      join current_media as cm
                                             where m.id = cm.media_id
                                               and cm.guild_id = :guildId) currentMedia
-                             where playlistMedias.source = currentMedia.source
-                               and playlistMedias.request_guid = currentMedia.request_guid
+                             where playlistMedias.request_guid = currentMedia.request_guid
                                and playlistMedias.guild_id = :guildId
                                and finish_time is null);
                 """;

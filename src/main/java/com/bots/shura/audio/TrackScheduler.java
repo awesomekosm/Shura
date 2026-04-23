@@ -81,6 +81,9 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        if (endReason == AudioTrackEndReason.REPLACED) {
+            return;
+        }
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
         LOGGER.info("Player was ended on {}", currentMedia);
         if (currentMedia != null) {

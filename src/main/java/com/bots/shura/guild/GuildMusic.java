@@ -50,15 +50,23 @@ public class GuildMusic {
 
     private final MediaAction mediaAction;
 
+    private final DiscordStatusService discordStatusService;
+
     private final YoutubeUrlCorrection youtubeUrlCorrection;
 
     private Shurapleer shurapleer;
 
-    public GuildMusic(VoiceChannel voiceChannel, MediaRepository mediaRepository, Downloader downloader, ShurapleerClient shurapleerClient, MediaAction mediaAction) {
+    public GuildMusic(VoiceChannel voiceChannel,
+                      MediaRepository mediaRepository,
+                      Downloader downloader,
+                      ShurapleerClient shurapleerClient,
+                      MediaAction mediaAction,
+                      DiscordStatusService discordStatusService) {
         this.voiceChannel = voiceChannel;
         this.mediaRepository = mediaRepository;
         this.downloader = downloader;
         this.mediaAction = mediaAction;
+        this.discordStatusService = discordStatusService;
         this.audioPlayerManager = playerManager();
         this.youtubeUrlCorrection = new YoutubeUrlCorrection();
         {
@@ -67,7 +75,7 @@ public class GuildMusic {
             this.audioLoader = new AudioLoader(audioPlayer, mediaAction, mediaRepository, audioPlayerManager, this.voiceChannel.getGuild().getIdLong());
             {
                 this.trackPlayer = new TrackPlayer(this.voiceChannel.getGuild().getIdLong(), audioPlayer);
-                this.trackScheduler = new TrackScheduler(trackPlayer, mediaAction, audioLoader, audioPlayerManager, mediaRepository);
+                this.trackScheduler = new TrackScheduler(trackPlayer, mediaAction, audioLoader, audioPlayerManager, mediaRepository, discordStatusService, this.voiceChannel.getJDA());
                 {
                     audioPlayer.addListener(trackScheduler);
                     audioPlayer.setVolume(20);
@@ -117,6 +125,32 @@ public class GuildMusic {
         trackPlayer.getAudioPlayer().setPaused(true);
     }
 
+    /**
+     * Re-queue a copy of a finished track (preserves {@code source} so shurapleer and other flows load correctly).
+     */
+    public void replayPrevious(Media from) {
+        if (from == null) {
+            return;
+        }
+        Media m = new Media();
+        m.setGuildId(trackPlayer.getGuildId());
+        m.setName(from.getName());
+        m.setArtist(from.getArtist());
+        m.setAlbum(from.getAlbum());
+        m.setLink(from.getLink());
+        m.setGuid(from.getGuid());
+        m.setSource(from.getSource());
+        m.setRequestGuid(UUID.randomUUID().toString());
+        m.setRequestTime(LocalDateTime.now());
+        m.setStartTime(null);
+        m.setFinishTime(null);
+        mediaRepository.save(m);
+        Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
+        if (currentMedia == null) {
+            mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
+        }
+    }
+
     public void play(String command) {
         if (shurapleer != null && StringUtils.contains(command, "shurapleer")) {
             shurapleer.loadTracks(command);
@@ -138,6 +172,10 @@ public class GuildMusic {
     }
 
     public void leave() {
+        var jda = voiceChannel.getJDA();
+        long guildId = trackPlayer.getGuildId();
+        discordStatusService.setIdle(jda, guildId);
+        discordStatusService.unregisterGuildPanel(guildId);
         voiceChannel.getGuild().getAudioManager().closeAudioConnection();
     }
 
@@ -145,8 +183,16 @@ public class GuildMusic {
         trackPlayer.getAudioPlayer().setPaused(false);
     }
 
+    public boolean isPaused() {
+        return trackPlayer.getAudioPlayer().isPaused();
+    }
+
     public void volume(int volume) {
         trackPlayer.getAudioPlayer().setVolume(volume);
+    }
+
+    public int getVolume() {
+        return trackPlayer.getAudioPlayer().getVolume();
     }
 
     public void skip(int skipNum) {

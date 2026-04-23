@@ -64,6 +64,7 @@ docker run -d \
 * !skip 3
 * or a whole playlist that's queued
 * !skip pl
+#### PREVIOUS
 #### VOLUME
 * volume goes from 0 to 1000
 * default is

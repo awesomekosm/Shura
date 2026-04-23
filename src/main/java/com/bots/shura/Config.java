@@ -9,6 +9,7 @@ import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.audio.AudioModuleConfig;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -88,6 +89,11 @@ public class Config {
                             LOGGER.info("Non Text channel {} {} {}", event.getMessage().getType(), event.getAuthor(), event.getMessage().getContentDisplay());
                         }
                     }
+
+                    @Override
+                    public void onButtonInteraction(ButtonInteractionEvent event) {
+                        commandProcessor.handleControlButton(event);
+                    }
                 });
     }
 
@@ -103,6 +109,7 @@ public class Config {
         commandAliases.put(CommandName.RESUME, List.of("RESUME", "РЕЗЮМ", "ПРОДОЛЖИТЬ"));
         commandAliases.put(CommandName.SKIP, List.of("SKIP", "СКИП", "ПРОПУСК"));
         commandAliases.put(CommandName.VOLUME, List.of("VOLUME", "ВОЛЬЮМ", "ГРОМКОСТЬ"));
+        commandAliases.put(CommandName.PREVIOUS, List.of("PREVIOUS", "ПРЕДЫДУЩИЙ", "НАЗАД"));
 
         return commandAliases;
     }

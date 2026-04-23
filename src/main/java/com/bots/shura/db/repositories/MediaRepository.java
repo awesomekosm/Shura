@@ -85,6 +85,18 @@ public class MediaRepository {
         ) > 0;
     }
 
+    public Media getLastFinishedMedia(long guildId) {
+        final String sql = "select * from media where guild_id = :guildId and finish_time is not null order by finish_time desc, id desc limit 1";
+        final Map<String, ?> map = Map.of("guildId", guildId);
+
+        var result = namedParameterJdbcTemplate.query(sql, map, new MediaRepository.MediaRowMapper());
+        if (!result.isEmpty()) {
+            return result.get(0);
+        } else {
+            return null;
+        }
+    }
+
     public List<Media> getCurrentPlaylist(long guildId) {
         final String sql = """
                 select playlistMedias.id,

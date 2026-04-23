@@ -8,6 +8,8 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import net.dv8tion.jda.api.JDA;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,43 +25,68 @@ public class TrackScheduler extends AudioEventAdapter {
     private final AudioLoader audioLoader;
     private final AudioPlayerManager audioPlayerManager;
     private final MediaRepository mediaRepository;
+    private final DiscordStatusService discordStatusService;
+    private final JDA jda;
 
     public TrackScheduler(TrackPlayer trackPlayer,
                           MediaAction mediaAction,
                           AudioLoader audioLoader,
                           AudioPlayerManager audioPlayerManager,
-                          MediaRepository mediaRepository) {
+                          MediaRepository mediaRepository,
+                          DiscordStatusService discordStatusService,
+                          JDA jda) {
         this.trackPlayer = trackPlayer;
         this.mediaAction = mediaAction;
         this.audioLoader = audioLoader;
         this.audioPlayerManager = audioPlayerManager;
         this.mediaRepository = mediaRepository;
+        this.discordStatusService = discordStatusService;
+        this.jda = jda;
     }
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
         LOGGER.info("Player was paused on {}", currentMedia);
+        if (currentMedia != null && StringUtils.isNotBlank(currentMedia.getName())) {
+            discordStatusService.setPaused(jda, trackPlayer.getGuildId(), currentMedia.getName());
+        }
     }
 
     @Override
     public void onPlayerResume(AudioPlayer player) {
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
         LOGGER.info("Player was resumed on {}", currentMedia);
+        if (currentMedia != null && StringUtils.isNotBlank(currentMedia.getName())) {
+            discordStatusService.setPlaying(jda, trackPlayer.getGuildId(), currentMedia.getName());
+        }
     }
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
         LOGGER.info("Player was started on {}", currentMedia);
-        mediaRepository.updateMediaStartTime(currentMedia.getId(), LocalDateTime.now());
+        if (currentMedia != null) {
+            mediaRepository.updateMediaStartTime(currentMedia.getId(), LocalDateTime.now());
+        }
+        final String trackName = currentMedia != null ? currentMedia.getName() : track.getInfo().title;
+        if (StringUtils.isNotBlank(trackName)) {
+            if (player.isPaused()) {
+                discordStatusService.setPaused(jda, trackPlayer.getGuildId(), trackName);
+            } else {
+                discordStatusService.setPlaying(jda, trackPlayer.getGuildId(), trackName);
+            }
+        }
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         Media currentMedia = mediaRepository.getCurrentMedia(trackPlayer.getGuildId());
         LOGGER.info("Player was ended on {}", currentMedia);
-        mediaRepository.updateMediaFinishTime(currentMedia.getId(), LocalDateTime.now());
+        if (currentMedia != null) {
+            mediaRepository.updateMediaFinishTime(currentMedia.getId(), LocalDateTime.now());
+        }
+        discordStatusService.setIdle(jda, trackPlayer.getGuildId());
         mediaAction.nextTrack(audioPlayerManager, audioLoader, trackPlayer.getGuildId());
     }
 

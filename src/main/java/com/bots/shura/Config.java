@@ -1,5 +1,6 @@
 package com.bots.shura;
 
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 import com.bots.shura.caching.Downloader;
 import com.bots.shura.caching.ShutdownDownloader;
 import com.bots.shura.commands.Command;
@@ -7,6 +8,7 @@ import com.bots.shura.commands.CommandProcessor;
 import com.bots.shura.commands.CommandProcessor.CommandName;
 import com.bots.shura.commands.Utils;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -52,12 +54,17 @@ public class Config {
     public JDABuilder discordClient(ShuraProperties shuraProperties,
                                     CommandProcessor commandProcessor,
                                     Map<CommandName, List<String>> commandAliases) {
-
         return JDABuilder.createDefault(shuraProperties.getDiscord().getToken())
+                .setAudioModuleConfig(
+                        new AudioModuleConfig()
+                                .withDaveSessionFactory(new JDaveSessionFactory()))
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT)
                 .addEventListeners(new ListenerAdapter() {
                     @Override
                     public void onMessageReceived(MessageReceivedEvent event) {
+                        if (!event.isFromGuild()) return;
+                        if (event.getAuthor().isBot()) return;
+
                         if (event.isFromType(ChannelType.TEXT)) {
                             LOGGER.info("[{}][{}] {}: {}", event.getGuild().getName(), event.getChannel().getName(), event.getAuthor(), event.getMessage().getContentDisplay());
                             final String content = StringUtils.trimToEmpty(event.getMessage().getContentRaw());

@@ -30,7 +30,7 @@ docker run -d \
 ### Building
 
 #### Maven Build
-* Have at least jdk 19
+* Have at least jdk 25
 * Execute `mvnw.cmd` on windows or `mvnw` on linux at the root of the directory
 * `./mvnw package`
 * Output will be in shura/target/shura-***.jar
@@ -38,7 +38,7 @@ docker run -d \
 * `java -jar -Dshura.discord.token=YOUR_DISCORD_TOKEN shura-***.jar`
 
 #### Maven + Docker Build
-* Have at least jdk 19 and docker 18+
+* Have at least jdk 25 and docker 18+
 * `./run.sh YOUR_DISCORD_TOKEN` from shura
   - will build latest using bundled maven
   - remove old *Shura* container if exists
